@@ -22,20 +22,5 @@ MySQL
 MySQL Connector/J
 dotenv-java
 NetBeans
-Estructura del proyecto
-BD_Cuentas_Corrientes_Personal/
-│
-├── src/
-│   └── main/
-│       └── java/
-│           └── com/
-│               └── mycompany/
-│                   └── coneccion_bd/
-│                       ├── Coneccion_BD.java
-│                       ├── ConexionBD.java
-│                       └── Launcher.java
-│
-├── pom.xml
-├── nbactions.xml
-├── .gitignore
-└── README.md
+
+
