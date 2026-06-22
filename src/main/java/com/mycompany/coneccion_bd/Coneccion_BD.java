@@ -21,6 +21,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -280,23 +282,33 @@ public class Coneccion_BD extends Application {
         VBox zona = new VBox(12);
 
         zona.setPadding(new Insets(20));
+        zona.setStyle("-fx-background-color: #f3f4f6;");
 
         lblTitulo = new Label();
 
         lblTitulo.setStyle(
             "-fx-font-size: 24px;" +
-            "-fx-font-weight: bold;"
+            "-fx-font-weight: bold;" +
+            "-fx-text-fill: #111827;"
         );
 
         lblDescripcion = new Label();
-
+        
+        lblDescripcion.setStyle(
+            "-fx-font-size: 14px;" +
+            "-fx-text-fill: #4b5563;"
+        );
+        
         panelCampos = new GridPane();
         panelCampos.setPadding(new Insets(15));
         panelCampos.setHgap(12);
         panelCampos.setVgap(10);
 
-        TitledPane areaRegistro =
-                new TitledPane("Area de Registro", panelCampos);
+        ScrollPane scrollCampos = new ScrollPane(panelCampos);
+        scrollCampos.setFitToWidth(true);
+        scrollCampos.setPrefHeight(260);
+
+        TitledPane areaRegistro = new TitledPane("Area de Registro", scrollCampos);
 
         areaRegistro.setCollapsible(false);
 
@@ -307,12 +319,14 @@ public class Coneccion_BD extends Application {
 
         tabla = new TableView<>();
         tabla.setItems(datos);
-
-        TitledPane areaGrilla =
-                new TitledPane("Grilla de Datos", tabla);
-
+        tabla.setPrefHeight(310);
+        
+        TitledPane areaGrilla = new TitledPane("Grilla de Datos", tabla);
+        
         areaGrilla.setCollapsible(false);
-
+        
+        VBox.setVgrow(areaGrilla, Priority.ALWAYS);
+        
         zona.getChildren().addAll(
                 lblTitulo,
                 lblDescripcion,
