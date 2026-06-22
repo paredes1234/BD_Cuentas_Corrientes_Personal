@@ -21,6 +21,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -28,7 +29,7 @@ import javafx.stage.Stage;
 public class Coneccion_BD extends Application {
 
     private Connection con;
-
+    private BorderPane root;
     private ComboBox<String> cboTablas;
     private GridPane panelCampos;
     private TableView<ObservableList<String>> tabla;
@@ -76,13 +77,17 @@ public class Coneccion_BD extends Application {
         TitledPane areaGrilla = new TitledPane("Grilla de Datos", tabla);
         areaGrilla.setCollapsible(false);
 
-        VBox root = new VBox(10);
-        root.setPadding(new Insets(15));
-        root.getChildren().addAll(panelSeleccion, areaRegistro, panelBotones1, panelBotones2, areaGrilla);
+        root = new BorderPane();
 
-        Scene scene = new Scene(root, 980, 650);
+        VBox contenido = new VBox(10);
+        contenido.setPadding(new Insets(15));
+        contenido.getChildren().addAll(panelSeleccion,areaRegistro,panelBotones1,panelBotones2,areaGrilla);
 
-        stage.setTitle("Entregable 2 - Mantenimiento de Tablas Referenciales");
+        root.setCenter(contenido);
+
+        Scene scene = new Scene(root, 1280, 720);
+
+        stage.setTitle("Sistema de Cuentas Corrientes de Personal");
         stage.setScene(scene);
         stage.setOnCloseRequest(e -> cerrarConexion());
         stage.show();
