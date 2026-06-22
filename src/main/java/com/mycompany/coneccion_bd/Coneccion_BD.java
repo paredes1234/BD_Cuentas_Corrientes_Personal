@@ -14,7 +14,6 @@ import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -30,7 +29,6 @@ public class Coneccion_BD extends Application {
 
     private Connection con;
     private BorderPane root;
-    private ComboBox<String> cboTablas;
     private GridPane panelCampos;
     private TableView<ObservableList<String>> tabla;
     private ObservableList<ObservableList<String>> datos;
@@ -49,10 +47,6 @@ public class Coneccion_BD extends Application {
         prepararEstadosRegistro();
         crearConfiguraciones();
 
-        cboTablas = new ComboBox<>();
-        cboTablas.getItems().addAll(configuraciones.keySet());
-        cboTablas.setPrefWidth(300);
-
         panelCampos = new GridPane();
         panelCampos.setPadding(new Insets(15));
         panelCampos.setHgap(10);
@@ -61,12 +55,6 @@ public class Coneccion_BD extends Application {
         tabla = new TableView<>();
         datos = FXCollections.observableArrayList();
         tabla.setItems(datos);
-
-        cboTablas.setOnAction(e -> cambiarTabla());
-
-        HBox panelSeleccion = new HBox(10);
-        panelSeleccion.setPadding(new Insets(10));
-        panelSeleccion.getChildren().addAll(new Label("Tabla referencial:"), cboTablas);
 
         HBox panelBotones1 = crearPanelBotones1();
         HBox panelBotones2 = crearPanelBotones2();
@@ -78,10 +66,11 @@ public class Coneccion_BD extends Application {
         areaGrilla.setCollapsible(false);
 
         root = new BorderPane();
-
+        
+        root.setLeft(crearMenuLateral());
         VBox contenido = new VBox(10);
         contenido.setPadding(new Insets(15));
-        contenido.getChildren().addAll(panelSeleccion,areaRegistro,panelBotones1,panelBotones2,areaGrilla);
+        contenido.getChildren().addAll(areaRegistro, panelBotones1, panelBotones2, areaGrilla);
 
         root.setCenter(contenido);
 
@@ -92,10 +81,9 @@ public class Coneccion_BD extends Application {
         stage.setOnCloseRequest(e -> cerrarConexion());
         stage.show();
 
-        cboTablas.getSelectionModel().selectFirst();
-        cambiarTabla();
+        cambiarModulo("R1Z_TIPO_TRABAJADOR");
     }
-
+    
     private void conectar() {
         try {
             con = ConexionBD.conectar();
@@ -241,13 +229,41 @@ public class Coneccion_BD extends Application {
         return hbox;
     }
 
-    private void cambiarTabla() {
-        String nombreTabla = cboTablas.getValue();
+    private VBox crearMenuLateral() {
 
-        if (nombreTabla == null) {
-            return;
-        }
+        VBox menu = new VBox(10);
+        menu.setPadding(new Insets(15));
+        menu.setPrefWidth(250);
 
+        menu.getChildren().addAll(
+
+            botonMenu("Estado Registro", "GZZ_ESTADO_REGISTRO"),
+            botonMenu("Companias", "GZZ_COMPANIA"),
+
+            botonMenu("Tipo Trabajador", "R1Z_TIPO_TRABAJADOR"),
+            botonMenu("Centro Costo", "R1Z_CENTRO_COSTO"),
+            botonMenu("Estado Trabajador", "R1Z_ESTADO_TRABAJADOR"),
+
+            botonMenu("Tipo Prestamo", "R1Z_TIPO_PRESTAMO"),
+            botonMenu("Tipo Interes", "R1Z_TIPO_INTERES"),
+            botonMenu("Tipo Movimiento", "R1Z_TIPO_MOVIMIENTO")
+        );
+
+        return menu;
+    }    
+
+    private Button botonMenu(String texto, String tablaNombre) {
+
+        Button btn = new Button(texto);
+
+        btn.setMaxWidth(Double.MAX_VALUE);
+
+        btn.setOnAction(e -> cambiarModulo(tablaNombre));
+
+        return btn;
+    }
+    
+    private void cambiarModulo(String nombreTabla) {
         configActual = configuraciones.get(nombreTabla);
 
         crearCampos();
