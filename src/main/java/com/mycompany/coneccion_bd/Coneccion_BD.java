@@ -19,6 +19,8 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Separator;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -232,31 +234,117 @@ public class Coneccion_BD extends Application {
     private VBox crearMenuLateral() {
 
         VBox menu = new VBox(10);
-        menu.setPadding(new Insets(15));
-        menu.setPrefWidth(250);
+        menu.setPadding(new Insets(18));
+        menu.setPrefWidth(290);
+
+        menu.setStyle("-fx-background-color: #111827;");
+
+        Label titulo = new Label("CUENTAS CORRIENTES");
+
+        titulo.setStyle(
+            "-fx-text-fill: white;" +
+            "-fx-font-size: 20px;" +
+            "-fx-font-weight: bold;"
+        );
+
+        Label subtitulo = new Label("Menu de mantenimiento");
+
+        subtitulo.setStyle(
+            "-fx-text-fill: #d1d5db;" +
+            "-fx-font-size: 13px;"
+        );
 
         menu.getChildren().addAll(
+            titulo,
+            subtitulo,
+            separador(),
+            seccion("Tablas Globales")
+        );
 
+        menu.getChildren().addAll(
             botonMenu("Estado Registro", "GZZ_ESTADO_REGISTRO"),
             botonMenu("Companias", "GZZ_COMPANIA"),
+
+            separador(),
+
+            seccion("Tablas Referenciales"),
 
             botonMenu("Tipo Trabajador", "R1Z_TIPO_TRABAJADOR"),
             botonMenu("Centro Costo", "R1Z_CENTRO_COSTO"),
             botonMenu("Estado Trabajador", "R1Z_ESTADO_TRABAJADOR"),
-
             botonMenu("Tipo Prestamo", "R1Z_TIPO_PRESTAMO"),
             botonMenu("Tipo Interes", "R1Z_TIPO_INTERES"),
             botonMenu("Tipo Movimiento", "R1Z_TIPO_MOVIMIENTO")
         );
 
-        return menu;
+        ScrollPane scroll = new ScrollPane(menu);
+
+        scroll.setFitToWidth(true);
+
+        scroll.setStyle(
+            "-fx-background: #111827;" +
+            "-fx-background-color: #111827;"
+        );
+
+        scroll.setPrefWidth(300);
+
+        VBox contenedor = new VBox(scroll);
+
+        contenedor.setPrefWidth(300);
+
+        return contenedor;
     }    
 
+    private Label seccion(String texto) {
+    Label lbl = new Label(texto);
+    lbl.setStyle(
+        "-fx-text-fill: #93c5fd;" +
+        "-fx-font-size: 13px;" +
+        "-fx-font-weight: bold;"
+    );
+    return lbl;
+    }  
+    
+    private Separator separador() {
+        Separator sp = new Separator();
+        sp.setStyle("-fx-background-color: #374151;");
+        return sp;
+    } 
+    
     private Button botonMenu(String texto, String tablaNombre) {
 
         Button btn = new Button(texto);
 
         btn.setMaxWidth(Double.MAX_VALUE);
+        btn.setPrefHeight(38);
+
+        btn.setStyle(
+            "-fx-background-color: #1f2937;" +
+            "-fx-text-fill: white;" +
+            "-fx-font-size: 13px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-background-radius: 8;"
+        );
+
+        btn.setOnMouseEntered(e ->
+            btn.setStyle(
+                "-fx-background-color: #2563eb;" +
+                "-fx-text-fill: white;" +
+                "-fx-font-size: 13px;" +
+                "-fx-font-weight: bold;" +
+                "-fx-background-radius: 8;"
+            )
+        );
+
+        btn.setOnMouseExited(e ->
+            btn.setStyle(
+                "-fx-background-color: #1f2937;" +
+                "-fx-text-fill: white;" +
+                "-fx-font-size: 13px;" +
+                "-fx-font-weight: bold;" +
+                "-fx-background-radius: 8;"
+            )
+        );
 
         btn.setOnAction(e -> cambiarModulo(tablaNombre));
 
