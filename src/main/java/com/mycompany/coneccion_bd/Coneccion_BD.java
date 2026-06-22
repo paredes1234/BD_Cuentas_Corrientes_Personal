@@ -31,6 +31,8 @@ public class Coneccion_BD extends Application {
 
     private Connection con;
     private BorderPane root;
+    private Label lblTitulo;
+    private Label lblDescripcion;
     private GridPane panelCampos;
     private TableView<ObservableList<String>> tabla;
     private ObservableList<ObservableList<String>> datos;
@@ -49,32 +51,10 @@ public class Coneccion_BD extends Application {
         prepararEstadosRegistro();
         crearConfiguraciones();
 
-        panelCampos = new GridPane();
-        panelCampos.setPadding(new Insets(15));
-        panelCampos.setHgap(10);
-        panelCampos.setVgap(10);
-
-        tabla = new TableView<>();
-        datos = FXCollections.observableArrayList();
-        tabla.setItems(datos);
-
-        HBox panelBotones1 = crearPanelBotones1();
-        HBox panelBotones2 = crearPanelBotones2();
-
-        TitledPane areaRegistro = new TitledPane("Area de Registro", panelCampos);
-        areaRegistro.setCollapsible(false);
-
-        TitledPane areaGrilla = new TitledPane("Grilla de Datos", tabla);
-        areaGrilla.setCollapsible(false);
-
         root = new BorderPane();
         
         root.setLeft(crearMenuLateral());
-        VBox contenido = new VBox(10);
-        contenido.setPadding(new Insets(15));
-        contenido.getChildren().addAll(areaRegistro, panelBotones1, panelBotones2, areaGrilla);
-
-        root.setCenter(contenido);
+        root.setCenter(crearZonaCentral());
 
         Scene scene = new Scene(root, 1280, 720);
 
@@ -295,6 +275,56 @@ public class Coneccion_BD extends Application {
         return contenedor;
     }    
 
+    private VBox crearZonaCentral() {
+
+        VBox zona = new VBox(12);
+
+        zona.setPadding(new Insets(20));
+
+        lblTitulo = new Label();
+
+        lblTitulo.setStyle(
+            "-fx-font-size: 24px;" +
+            "-fx-font-weight: bold;"
+        );
+
+        lblDescripcion = new Label();
+
+        panelCampos = new GridPane();
+        panelCampos.setPadding(new Insets(15));
+        panelCampos.setHgap(12);
+        panelCampos.setVgap(10);
+
+        TitledPane areaRegistro =
+                new TitledPane("Area de Registro", panelCampos);
+
+        areaRegistro.setCollapsible(false);
+
+        HBox panelBotones1 = crearPanelBotones1();
+        HBox panelBotones2 = crearPanelBotones2();
+
+        datos = FXCollections.observableArrayList();
+
+        tabla = new TableView<>();
+        tabla.setItems(datos);
+
+        TitledPane areaGrilla =
+                new TitledPane("Grilla de Datos", tabla);
+
+        areaGrilla.setCollapsible(false);
+
+        zona.getChildren().addAll(
+                lblTitulo,
+                lblDescripcion,
+                areaRegistro,
+                panelBotones1,
+                panelBotones2,
+                areaGrilla
+        );
+
+        return zona;
+    }    
+    
     private Label seccion(String texto) {
     Label lbl = new Label(texto);
     lbl.setStyle(
@@ -353,7 +383,9 @@ public class Coneccion_BD extends Application {
     
     private void cambiarModulo(String nombreTabla) {
         configActual = configuraciones.get(nombreTabla);
-
+        lblTitulo.setText(nombreTabla);
+        lblDescripcion.setText("Mantenimiento de " + nombreTabla);
+        
         crearCampos();
         crearColumnas();
         cargarTabla();
