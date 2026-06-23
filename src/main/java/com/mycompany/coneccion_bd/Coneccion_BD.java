@@ -1,11 +1,20 @@
 package com.mycompany.coneccion_bd;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 import javafx.application.Application;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
@@ -14,27 +23,29 @@ import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Separator;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.Separator;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 public class Coneccion_BD extends Application {
 
     private Connection con;
+
     private BorderPane root;
     private Label lblTitulo;
     private Label lblDescripcion;
+
     private GridPane panelCampos;
     private TableView<ObservableList<String>> tabla;
     private ObservableList<ObservableList<String>> datos;
@@ -54,7 +65,6 @@ public class Coneccion_BD extends Application {
         crearConfiguraciones();
 
         root = new BorderPane();
-        
         root.setLeft(crearMenuLateral());
         root.setCenter(crearZonaCentral());
 
@@ -67,7 +77,7 @@ public class Coneccion_BD extends Application {
 
         cambiarModulo("R1Z_TIPO_TRABAJADOR");
     }
-    
+
     private void conectar() {
         try {
             con = ConexionBD.conectar();
@@ -98,327 +108,423 @@ public class Coneccion_BD extends Application {
     private void crearConfiguraciones() {
         configuraciones = new LinkedHashMap<>();
 
-         configuraciones.put(
-        "R1M_TRABAJADOR",
-        new TablaConfig(
-            "R1M_TRABAJADOR",
-            "Trabajadores",
-            "Tabla maestra de trabajadores",
-            new String[]{
-                "TraCod", "TraComCod", "TraTipCod", "TraNom",
-                "TraFecIngAño", "TraFecIngMes", "TraFecIngDia",
-                "TraFecCesAño", "TraFecCesMes", "TraFecCesDia",
-                "TraFecVacAño", "TraFecVacMes", "TraFecVacDia",
-                "TraCenCosCod", "TraEstCod", "TraEstReg"
-            },
-            new String[]{"TraCod"},
-            "TraEstReg",
-            new String[]{
-                "TraFecCesAño", "TraFecCesMes", "TraFecCesDia",
-                "TraFecVacAño", "TraFecVacMes", "TraFecVacDia"
-            }
-        )
-        .enteros("TraCod","TraComCod","TraTipCod",
-                "TraFecIngAño","TraFecIngMes","TraFecIngDia",
-                "TraFecCesAño","TraFecCesMes","TraFecCesDia",
-                "TraFecVacAño","TraFecVacMes","TraFecVacDia")
-        .max("TraNom", 100).max("TraCenCosCod", 4).max("TraEstCod", 1).max("TraEstReg", 1)
-        .fk("TraComCod",    "GZZ_COMPANIA",          "ComCod")
-        .fk("TraTipCod",    "R1Z_TIPO_TRABAJADOR",   "TipTraCod")
-        .fk("TraCenCosCod", "R1Z_CENTRO_COSTO",      "CenCosCod")
-        .fk("TraEstCod",    "R1Z_ESTADO_TRABAJADOR", "EstTraCod")
-        .fk("TraEstReg",    "GZZ_ESTADO_REGISTRO",   "EstRegCod")
-    );
-    configuraciones.put(
-    "R1T_PRESTAMO",
-    new TablaConfig(
-        "R1T_PRESTAMO",
-        "Prestamos",
-        "Tabla transaccional de prestamos",
-        new String[]{
-            "PreTraCod","PreTipCod","PreSecCod",
-            "PreFecAño","PreFecMes","PreFecDia",
-            "PreMon","PreTasInt","PreTasIntSunat",
-            "PreCuo","PreCuoDes","PreTipIntCod","PreEstReg","PreComCod"
-        },
-        new String[]{"PreTraCod","PreTipCod","PreSecCod"},
-        "PreEstReg",
-        new String[]{}
-    )
-    .enteros("PreTraCod","PreTipCod","PreSecCod",
-             "PreFecAño","PreFecMes","PreFecDia",
-             "PreCuo","PreCuoDes","PreTipIntCod","PreComCod")
-    .decimales("PreMon","PreTasInt","PreTasIntSunat")
-    .max("PreEstReg", 1)
-    .fk("PreTraCod",   "R1M_TRABAJADOR",      "TraCod")
-    .fk("PreTipCod",   "R1Z_TIPO_PRESTAMO",   "TipPreCod")
-    .fk("PreTipIntCod","R1Z_TIPO_INTERES",    "TipIntCod")
-    .fk("PreEstReg",   "GZZ_ESTADO_REGISTRO", "EstRegCod")
-    .fk("PreComCod",   "GZZ_COMPANIA",        "ComCod")
-);
-
-configuraciones.put(
-    "R1T_PRESTAMO_MOVIMIENTO",
-    new TablaConfig(
-        "R1T_PRESTAMO_MOVIMIENTO",
-        "Movimientos de Prestamo",
-        "Tabla transaccional de movimientos de prestamos",
-        new String[]{
-            "MovTra","MovTipPre","MovSec","MovAnio","MovMes",
-            "MovNumPla","MovTip","MovMon","MovMonInt","MovEstReg"
-        },
-        new String[]{"MovTra","MovTipPre","MovSec","MovAnio","MovMes","MovNumPla"},
-        "MovEstReg",
-        new String[]{}
-    )
-    .enteros("MovTra","MovTipPre","MovSec","MovAnio","MovMes","MovNumPla")
-    .decimales("MovMon","MovMonInt")
-    .max("MovTip", 1).max("MovEstReg", 1)
-    .fk("MovTip",    "R1Z_TIPO_MOVIMIENTO", "TipMovCod")
-    .fk("MovEstReg", "GZZ_ESTADO_REGISTRO", "EstRegCod")
-    .fkCompuesta(
-        new String[]{"MovTra","MovTipPre","MovSec"},
-        "R1T_PRESTAMO",
-        new String[]{"PreTraCod","PreTipCod","PreSecCod"}
-    )
-);
-
-configuraciones.put(
-    "R1T_PRESTAMO_CALCULO",
-    new TablaConfig(
-        "R1T_PRESTAMO_CALCULO",
-        "Calculo de Prestamo",
-        "Tabla de control de calculos del prestamo",
-        new String[]{
-            "CalTraCod","CalTipCod","CalSecCod",
-            "PreMonInt","PreMonTot","PreMonCuoInt",
-            "PreMonAcuInt","PreMonCuo","PreMonAcu"
-        },
-        new String[]{"CalTraCod","CalTipCod","CalSecCod"},
-        null,          // sin columnaEstado
-        new String[]{}
-    )
-    .enteros("CalTraCod","CalTipCod","CalSecCod")
-    .decimales("PreMonInt","PreMonTot","PreMonCuoInt","PreMonAcuInt","PreMonCuo","PreMonAcu")
-    .fkCompuesta(
-        new String[]{"CalTraCod","CalTipCod","CalSecCod"},
-        "R1T_PRESTAMO",
-        new String[]{"PreTraCod","PreTipCod","PreSecCod"}
-    )
-);
-
         configuraciones.put(
             "GZZ_ESTADO_REGISTRO",
             new TablaConfig(
                 "GZZ_ESTADO_REGISTRO",
+                "Estado de Registro",
+                "Tabla global de estados de registro",
                 new String[]{"EstRegCod", "EstRegNom", "EstRegEstReg"},
-                "EstRegCod",
-                "EstRegEstReg"
+                new String[]{"EstRegCod"},
+                "EstRegEstReg",
+                new String[]{}
             )
+            .max("EstRegCod", 1)
+            .max("EstRegNom", 20)
+            .max("EstRegEstReg", 1)
         );
 
         configuraciones.put(
             "GZZ_COMPANIA",
             new TablaConfig(
                 "GZZ_COMPANIA",
+                "Companias",
+                "Tabla global de companias",
                 new String[]{"ComCod", "ComNom", "ComRuc", "ComDir", "ComEstReg"},
-                "ComCod",
-                "ComEstReg"
+                new String[]{"ComCod"},
+                "ComEstReg",
+                new String[]{}
             )
+            .enteros("ComCod")
+            .max("ComNom", 60)
+            .max("ComRuc", 11)
+            .max("ComDir", 80)
+            .max("ComEstReg", 1)
+            .fk("ComEstReg", "GZZ_ESTADO_REGISTRO", "EstRegCod")
         );
-        
-            configuraciones.put(
+
+        configuraciones.put(
             "R1Z_TIPO_TRABAJADOR",
             new TablaConfig(
                 "R1Z_TIPO_TRABAJADOR",
+                "Tipo Trabajador",
+                "Tabla referencial de tipos de trabajador",
                 new String[]{"TipTraCod", "TipTraNom", "TipTraEstReg"},
-                "TipTraCod",
-                "TipTraEstReg"
+                new String[]{"TipTraCod"},
+                "TipTraEstReg",
+                new String[]{}
             )
+            .enteros("TipTraCod")
+            .max("TipTraNom", 50)
+            .max("TipTraEstReg", 1)
+            .fk("TipTraEstReg", "GZZ_ESTADO_REGISTRO", "EstRegCod")
         );
-        
+
         configuraciones.put(
             "R1Z_CENTRO_COSTO",
             new TablaConfig(
                 "R1Z_CENTRO_COSTO",
+                "Centro de Costo",
+                "Tabla referencial de centros de costo",
                 new String[]{"CenCosCod", "CenCosNom", "CenCosEstReg"},
-                "CenCosCod",
-                "CenCosEstReg"
+                new String[]{"CenCosCod"},
+                "CenCosEstReg",
+                new String[]{}
             )
+            .max("CenCosCod", 4)
+            .max("CenCosNom", 100)
+            .max("CenCosEstReg", 1)
+            .fk("CenCosEstReg", "GZZ_ESTADO_REGISTRO", "EstRegCod")
         );
 
         configuraciones.put(
             "R1Z_ESTADO_TRABAJADOR",
             new TablaConfig(
                 "R1Z_ESTADO_TRABAJADOR",
+                "Estado Trabajador",
+                "Tabla referencial de estados del trabajador",
                 new String[]{"EstTraCod", "EstTraNom", "EstTraEstReg"},
-                "EstTraCod",
-                "EstTraEstReg"
+                new String[]{"EstTraCod"},
+                "EstTraEstReg",
+                new String[]{}
             )
+            .max("EstTraCod", 1)
+            .max("EstTraNom", 20)
+            .max("EstTraEstReg", 1)
+            .fk("EstTraEstReg", "GZZ_ESTADO_REGISTRO", "EstRegCod")
         );
 
         configuraciones.put(
             "R1Z_TIPO_PRESTAMO",
             new TablaConfig(
                 "R1Z_TIPO_PRESTAMO",
+                "Tipo Prestamo",
+                "Tabla referencial de tipos de prestamo",
                 new String[]{"TipPreCod", "TipPreNom", "TipPreEstReg"},
-                "TipPreCod",
-                "TipPreEstReg"
+                new String[]{"TipPreCod"},
+                "TipPreEstReg",
+                new String[]{}
             )
+            .enteros("TipPreCod")
+            .max("TipPreNom", 50)
+            .max("TipPreEstReg", 1)
+            .fk("TipPreEstReg", "GZZ_ESTADO_REGISTRO", "EstRegCod")
         );
 
         configuraciones.put(
             "R1Z_TIPO_INTERES",
             new TablaConfig(
                 "R1Z_TIPO_INTERES",
+                "Tipo Interes",
+                "Tabla referencial de tipos de interes",
                 new String[]{"TipIntCod", "TipIntNom", "TipIntDesc", "TipIntEstReg"},
-                "TipIntCod",
-                "TipIntEstReg"
+                new String[]{"TipIntCod"},
+                "TipIntEstReg",
+                new String[]{}
             )
+            .enteros("TipIntCod")
+            .max("TipIntNom", 20)
+            .max("TipIntDesc", 100)
+            .max("TipIntEstReg", 1)
+            .fk("TipIntEstReg", "GZZ_ESTADO_REGISTRO", "EstRegCod")
         );
 
         configuraciones.put(
             "R1Z_TIPO_MOVIMIENTO",
             new TablaConfig(
                 "R1Z_TIPO_MOVIMIENTO",
+                "Tipo Movimiento",
+                "Tabla referencial de tipos de movimiento",
                 new String[]{"TipMovCod", "TipMovNom", "TipMovEstReg"},
-                "TipMovCod",
-                "TipMovEstReg"
+                new String[]{"TipMovCod"},
+                "TipMovEstReg",
+                new String[]{}
+            )
+            .max("TipMovCod", 1)
+            .max("TipMovNom", 20)
+            .max("TipMovEstReg", 1)
+            .fk("TipMovEstReg", "GZZ_ESTADO_REGISTRO", "EstRegCod")
+        );
+
+        configuraciones.put(
+            "R1M_TRABAJADOR",
+            new TablaConfig(
+                "R1M_TRABAJADOR",
+                "Trabajadores",
+                "Tabla maestra de trabajadores",
+                new String[]{
+                    "TraCod",
+                    "TraComCod",
+                    "TraTipCod",
+                    "TraNom",
+                    "TraFecIngAño",
+                    "TraFecIngMes",
+                    "TraFecIngDia",
+                    "TraFecCesAño",
+                    "TraFecCesMes",
+                    "TraFecCesDia",
+                    "TraFecVacAño",
+                    "TraFecVacMes",
+                    "TraFecVacDia",
+                    "TraCenCosCod",
+                    "TraEstCod",
+                    "TraEstReg"
+                },
+                new String[]{"TraCod"},
+                "TraEstReg",
+                new String[]{
+                    "TraFecCesAño",
+                    "TraFecCesMes",
+                    "TraFecCesDia",
+                    "TraFecVacAño",
+                    "TraFecVacMes",
+                    "TraFecVacDia"
+                }
+            )
+            .enteros(
+                "TraCod",
+                "TraComCod",
+                "TraTipCod",
+                "TraFecIngAño",
+                "TraFecIngMes",
+                "TraFecIngDia",
+                "TraFecCesAño",
+                "TraFecCesMes",
+                "TraFecCesDia",
+                "TraFecVacAño",
+                "TraFecVacMes",
+                "TraFecVacDia"
+            )
+            .max("TraNom", 100)
+            .max("TraCenCosCod", 4)
+            .max("TraEstCod", 1)
+            .max("TraEstReg", 1)
+            .fk("TraComCod", "GZZ_COMPANIA", "ComCod")
+            .fk("TraTipCod", "R1Z_TIPO_TRABAJADOR", "TipTraCod")
+            .fk("TraCenCosCod", "R1Z_CENTRO_COSTO", "CenCosCod")
+            .fk("TraEstCod", "R1Z_ESTADO_TRABAJADOR", "EstTraCod")
+            .fk("TraEstReg", "GZZ_ESTADO_REGISTRO", "EstRegCod")
+        );
+
+        configuraciones.put(
+            "R1T_PRESTAMO",
+            new TablaConfig(
+                "R1T_PRESTAMO",
+                "Prestamos",
+                "Tabla transaccional de prestamos",
+                new String[]{
+                    "PreTraCod",
+                    "PreTipCod",
+                    "PreSecCod",
+                    "PreFecAño",
+                    "PreFecMes",
+                    "PreFecDia",
+                    "PreMon",
+                    "PreTasInt",
+                    "PreTasIntSunat",
+                    "PreCuo",
+                    "PreCuoDes",
+                    "PreTipIntCod",
+                    "PreEstReg",
+                    "PreComCod"
+                },
+                new String[]{"PreTraCod", "PreTipCod", "PreSecCod"},
+                "PreEstReg",
+                new String[]{}
+            )
+            .enteros(
+                "PreTraCod",
+                "PreTipCod",
+                "PreSecCod",
+                "PreFecAño",
+                "PreFecMes",
+                "PreFecDia",
+                "PreCuo",
+                "PreCuoDes",
+                "PreTipIntCod",
+                "PreComCod"
+            )
+            .decimales("PreMon", "PreTasInt", "PreTasIntSunat")
+            .max("PreEstReg", 1)
+            .fk("PreTraCod", "R1M_TRABAJADOR", "TraCod")
+            .fk("PreTipCod", "R1Z_TIPO_PRESTAMO", "TipPreCod")
+            .fk("PreTipIntCod", "R1Z_TIPO_INTERES", "TipIntCod")
+            .fk("PreEstReg", "GZZ_ESTADO_REGISTRO", "EstRegCod")
+            .fk("PreComCod", "GZZ_COMPANIA", "ComCod")
+        );
+
+        configuraciones.put(
+            "R1T_PRESTAMO_MOVIMIENTO",
+            new TablaConfig(
+                "R1T_PRESTAMO_MOVIMIENTO",
+                "Movimientos de Prestamo",
+                "Tabla transaccional de movimientos de prestamos",
+                new String[]{
+                    "MovTra",
+                    "MovTipPre",
+                    "MovSec",
+                    "MovAnio",
+                    "MovMes",
+                    "MovNumPla",
+                    "MovTip",
+                    "MovMon",
+                    "MovMonInt",
+                    "MovEstReg"
+                },
+                new String[]{"MovTra", "MovTipPre", "MovSec", "MovAnio", "MovMes", "MovNumPla"},
+                "MovEstReg",
+                new String[]{}
+            )
+            .enteros("MovTra", "MovTipPre", "MovSec", "MovAnio", "MovMes", "MovNumPla")
+            .decimales("MovMon", "MovMonInt")
+            .max("MovTip", 1)
+            .max("MovEstReg", 1)
+            .fk("MovTip", "R1Z_TIPO_MOVIMIENTO", "TipMovCod")
+            .fk("MovEstReg", "GZZ_ESTADO_REGISTRO", "EstRegCod")
+            .fkCompuesta(
+                new String[]{"MovTra", "MovTipPre", "MovSec"},
+                "R1T_PRESTAMO",
+                new String[]{"PreTraCod", "PreTipCod", "PreSecCod"}
+            )
+        );
+
+        configuraciones.put(
+            "R1T_PRESTAMO_CALCULO",
+            new TablaConfig(
+                "R1T_PRESTAMO_CALCULO",
+                "Calculo de Prestamo",
+                "Tabla de control de calculos del prestamo",
+                new String[]{
+                    "CalTraCod",
+                    "CalTipCod",
+                    "CalSecCod",
+                    "PreMonInt",
+                    "PreMonTot",
+                    "PreMonCuoInt",
+                    "PreMonAcuInt",
+                    "PreMonCuo",
+                    "PreMonAcu"
+                },
+                new String[]{"CalTraCod", "CalTipCod", "CalSecCod"},
+                null,
+                new String[]{}
+            )
+            .enteros("CalTraCod", "CalTipCod", "CalSecCod")
+            .decimales(
+                "PreMonInt",
+                "PreMonTot",
+                "PreMonCuoInt",
+                "PreMonAcuInt",
+                "PreMonCuo",
+                "PreMonAcu"
+            )
+            .fkCompuesta(
+                new String[]{"CalTraCod", "CalTipCod", "CalSecCod"},
+                "R1T_PRESTAMO",
+                new String[]{"PreTraCod", "PreTipCod", "PreSecCod"}
             )
         );
     }
 
-    private HBox crearPanelBotones1() {
-        Button btnAdicionar = botonAccion("Adicionar", "#16a34a");
-        Button btnModificar = botonAccion("Modificar", "#2563eb");
-        Button btnEliminar  = botonAccion("Eliminar",  "#dc2626");
-        Button btnCancelar  = botonAccion("Cancelar",  "#6b7280");
-
-        btnAdicionar.setOnAction(e -> adicionar());
-        btnModificar.setOnAction(e -> modificar());
-        btnEliminar.setOnAction(e -> eliminar());
-        btnCancelar.setOnAction(e -> cancelar());
-
-        HBox hbox = new HBox(10);
-        hbox.getChildren().addAll(btnAdicionar, btnModificar, btnEliminar, btnCancelar);
-        return hbox;
-    }
-
-    private HBox crearPanelBotones2() {
-        Button btnInactivar = botonAccion("Inactivar", "#f59e0b");
-        Button btnReactivar = botonAccion("Reactivar", "#059669");
-        Button btnActualizar = botonAccion("Actualizar", "#7c3aed");
-        Button btnSalir     = botonAccion("Salir",      "#111827");
-
-        btnInactivar.setOnAction(e -> inactivar());
-        btnReactivar.setOnAction(e -> reactivar());
-        btnActualizar.setOnAction(e -> actualizar());
-        btnSalir.setOnAction(e -> salir());
-
-        HBox hbox = new HBox(10);
-        hbox.getChildren().addAll(btnInactivar, btnReactivar, btnActualizar, btnSalir);
-        return hbox;
-    }
-
-    private Button botonAccion(String texto, String color) {
-    Button btn = new Button(texto);
-    btn.setPrefWidth(125);
-    btn.setPrefHeight(36);
-    btn.setStyle(
-        "-fx-background-color: " + color + ";" +
-        "-fx-text-fill: white;" +
-        "-fx-font-weight: bold;" +
-        "-fx-background-radius: 8;"
-    );
-    return btn;
-    }
-
     private VBox crearMenuLateral() {
-
         VBox menu = new VBox(10);
         menu.setPadding(new Insets(18));
         menu.setPrefWidth(290);
-
         menu.setStyle("-fx-background-color: #111827;");
 
         Label titulo = new Label("CUENTAS CORRIENTES");
-
-        titulo.setStyle(
-            "-fx-text-fill: white;" +
-            "-fx-font-size: 20px;" +
-            "-fx-font-weight: bold;"
-        );
+        titulo.setStyle("-fx-text-fill: white; -fx-font-size: 20px; -fx-font-weight: bold;");
 
         Label subtitulo = new Label("Menu de mantenimiento");
+        subtitulo.setStyle("-fx-text-fill: #d1d5db; -fx-font-size: 13px;");
 
-        subtitulo.setStyle(
-            "-fx-text-fill: #d1d5db;" +
-            "-fx-font-size: 13px;"
-        );
-
-        menu.getChildren().addAll(
-            titulo,
-            subtitulo,
-            separador(),
-            seccion("Tablas Globales")
-        );
-
+        menu.getChildren().addAll(titulo, subtitulo, separador(), seccion("Tablas Globales"));
         menu.getChildren().addAll(
             botonMenu("Estado Registro", "GZZ_ESTADO_REGISTRO"),
             botonMenu("Companias", "GZZ_COMPANIA"),
-
             separador(),
-
             seccion("Tablas Referenciales"),
-
             botonMenu("Tipo Trabajador", "R1Z_TIPO_TRABAJADOR"),
             botonMenu("Centro Costo", "R1Z_CENTRO_COSTO"),
             botonMenu("Estado Trabajador", "R1Z_ESTADO_TRABAJADOR"),
             botonMenu("Tipo Prestamo", "R1Z_TIPO_PRESTAMO"),
             botonMenu("Tipo Interes", "R1Z_TIPO_INTERES"),
-            botonMenu("Tipo Movimiento", "R1Z_TIPO_MOVIMIENTO")
+            botonMenu("Tipo Movimiento", "R1Z_TIPO_MOVIMIENTO"),
+            separador(),
+            seccion("Tablas Fundamentales"),
+            botonMenu("Trabajadores", "R1M_TRABAJADOR"),
+            botonMenu("Prestamos", "R1T_PRESTAMO"),
+            botonMenu("Movimientos", "R1T_PRESTAMO_MOVIMIENTO"),
+            botonMenu("Calculo Prestamo", "R1T_PRESTAMO_CALCULO")
         );
 
         ScrollPane scroll = new ScrollPane(menu);
-
         scroll.setFitToWidth(true);
-
-        scroll.setStyle(
-            "-fx-background: #111827;" +
-            "-fx-background-color: #111827;"
-        );
-
+        scroll.setStyle("-fx-background: #111827; -fx-background-color: #111827;");
         scroll.setPrefWidth(300);
 
         VBox contenedor = new VBox(scroll);
-
         contenedor.setPrefWidth(300);
 
         return contenedor;
-    }    
+    }
+
+    private Label seccion(String texto) {
+        Label lbl = new Label(texto);
+        lbl.setStyle("-fx-text-fill: #93c5fd; -fx-font-size: 13px; -fx-font-weight: bold;");
+        return lbl;
+    }
+
+    private Separator separador() {
+        Separator sp = new Separator();
+        sp.setStyle("-fx-background-color: #374151;");
+        return sp;
+    }
+
+    private Button botonMenu(String texto, String tablaNombre) {
+        Button btn = new Button(texto);
+        btn.setMaxWidth(Double.MAX_VALUE);
+        btn.setPrefHeight(38);
+        btn.setStyle(
+            "-fx-background-color: #1f2937;" +
+            "-fx-text-fill: white;" +
+            "-fx-font-size: 13px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-background-radius: 8;"
+        );
+
+        btn.setOnMouseEntered(e -> btn.setStyle(
+            "-fx-background-color: #2563eb;" +
+            "-fx-text-fill: white;" +
+            "-fx-font-size: 13px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-background-radius: 8;"
+        ));
+
+        btn.setOnMouseExited(e -> btn.setStyle(
+            "-fx-background-color: #1f2937;" +
+            "-fx-text-fill: white;" +
+            "-fx-font-size: 13px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-background-radius: 8;"
+        ));
+
+        btn.setOnAction(e -> cambiarModulo(tablaNombre));
+
+        return btn;
+    }
 
     private VBox crearZonaCentral() {
-
         VBox zona = new VBox(12);
-
         zona.setPadding(new Insets(20));
         zona.setStyle("-fx-background-color: #f3f4f6;");
 
         lblTitulo = new Label();
-
-        lblTitulo.setStyle(
-            "-fx-font-size: 24px;" +
-            "-fx-font-weight: bold;" +
-            "-fx-text-fill: #111827;"
-        );
+        lblTitulo.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #111827;");
 
         lblDescripcion = new Label();
-        
-        lblDescripcion.setStyle(
-            "-fx-font-size: 14px;" +
-            "-fx-text-fill: #4b5563;"
-        );
-        
+        lblDescripcion.setStyle("-fx-font-size: 14px; -fx-text-fill: #4b5563;");
+
         panelCampos = new GridPane();
         panelCampos.setPadding(new Insets(15));
         panelCampos.setHgap(12);
@@ -429,97 +535,87 @@ configuraciones.put(
         scrollCampos.setPrefHeight(260);
 
         TitledPane areaRegistro = new TitledPane("Area de Registro", scrollCampos);
-
         areaRegistro.setCollapsible(false);
 
         HBox panelBotones1 = crearPanelBotones1();
         HBox panelBotones2 = crearPanelBotones2();
 
         datos = FXCollections.observableArrayList();
-
         tabla = new TableView<>();
         tabla.setItems(datos);
         tabla.setPrefHeight(310);
-        
+
         TitledPane areaGrilla = new TitledPane("Grilla de Datos", tabla);
-        
         areaGrilla.setCollapsible(false);
-        
+
         VBox.setVgrow(areaGrilla, Priority.ALWAYS);
-        
+
         zona.getChildren().addAll(
-                lblTitulo,
-                lblDescripcion,
-                areaRegistro,
-                panelBotones1,
-                panelBotones2,
-                areaGrilla
+            lblTitulo,
+            lblDescripcion,
+            areaRegistro,
+            panelBotones1,
+            panelBotones2,
+            areaGrilla
         );
 
         return zona;
-    }    
-    
-    private Label seccion(String texto) {
-    Label lbl = new Label(texto);
-    lbl.setStyle(
-        "-fx-text-fill: #93c5fd;" +
-        "-fx-font-size: 13px;" +
-        "-fx-font-weight: bold;"
-    );
-    return lbl;
-    }  
-    
-    private Separator separador() {
-        Separator sp = new Separator();
-        sp.setStyle("-fx-background-color: #374151;");
-        return sp;
-    } 
-    
-    private Button botonMenu(String texto, String tablaNombre) {
+    }
 
+    private HBox crearPanelBotones1() {
+        Button btnAdicionar = botonAccion("Adicionar", "#16a34a");
+        Button btnModificar = botonAccion("Modificar", "#2563eb");
+        Button btnEliminar = botonAccion("Eliminar", "#dc2626");
+        Button btnCancelar = botonAccion("Cancelar", "#6b7280");
+
+        btnAdicionar.setOnAction(e -> adicionar());
+        btnModificar.setOnAction(e -> modificar());
+        btnEliminar.setOnAction(e -> eliminar());
+        btnCancelar.setOnAction(e -> cancelar());
+
+        HBox hbox = new HBox(10);
+        hbox.getChildren().addAll(btnAdicionar, btnModificar, btnEliminar, btnCancelar);
+
+        return hbox;
+    }
+
+    private HBox crearPanelBotones2() {
+        Button btnInactivar = botonAccion("Inactivar", "#f59e0b");
+        Button btnReactivar = botonAccion("Reactivar", "#059669");
+        Button btnActualizar = botonAccion("Actualizar", "#7c3aed");
+        Button btnSalir = botonAccion("Salir", "#111827");
+
+        btnInactivar.setOnAction(e -> inactivar());
+        btnReactivar.setOnAction(e -> reactivar());
+        btnActualizar.setOnAction(e -> actualizar());
+        btnSalir.setOnAction(e -> salir());
+
+        HBox hbox = new HBox(10);
+        hbox.getChildren().addAll(btnInactivar, btnReactivar, btnActualizar, btnSalir);
+
+        return hbox;
+    }
+
+    private Button botonAccion(String texto, String color) {
         Button btn = new Button(texto);
-
-        btn.setMaxWidth(Double.MAX_VALUE);
-        btn.setPrefHeight(38);
-
+        btn.setPrefWidth(125);
+        btn.setPrefHeight(36);
         btn.setStyle(
-            "-fx-background-color: #1f2937;" +
+            "-fx-background-color: " + color + ";" +
             "-fx-text-fill: white;" +
-            "-fx-font-size: 13px;" +
             "-fx-font-weight: bold;" +
             "-fx-background-radius: 8;"
         );
 
-        btn.setOnMouseEntered(e ->
-            btn.setStyle(
-                "-fx-background-color: #2563eb;" +
-                "-fx-text-fill: white;" +
-                "-fx-font-size: 13px;" +
-                "-fx-font-weight: bold;" +
-                "-fx-background-radius: 8;"
-            )
-        );
-
-        btn.setOnMouseExited(e ->
-            btn.setStyle(
-                "-fx-background-color: #1f2937;" +
-                "-fx-text-fill: white;" +
-                "-fx-font-size: 13px;" +
-                "-fx-font-weight: bold;" +
-                "-fx-background-radius: 8;"
-            )
-        );
-
-        btn.setOnAction(e -> cambiarModulo(tablaNombre));
-
         return btn;
     }
-    
+
     private void cambiarModulo(String nombreTabla) {
         configActual = configuraciones.get(nombreTabla);
-        lblTitulo.setText(nombreTabla);
-        lblDescripcion.setText("Mantenimiento de " + nombreTabla);
-        
+
+        lblTitulo.setText(configActual.titulo);
+        lblDescripcion.setText(configActual.descripcion + " - " + configActual.nombreTabla);
+
         crearCampos();
         crearColumnas();
         cargarTabla();
@@ -534,8 +630,10 @@ configuraciones.put(
             String columna = configActual.columnas[i];
 
             Label lbl = new Label(columna + ":");
+            lbl.setStyle("-fx-font-weight: bold;");
+
             TextField txt = new TextField();
-            txt.setPrefWidth(320);
+            txt.setPrefWidth(245);
 
             if (columna.equals(configActual.columnaEstado)) {
                 txt.setEditable(false);
@@ -543,8 +641,11 @@ configuraciones.put(
 
             campos.put(columna, txt);
 
-            panelCampos.add(lbl, 0, i);
-            panelCampos.add(txt, 1, i);
+            int fila = i / 2;
+            int columnaGrid = (i % 2) * 2;
+
+            panelCampos.add(lbl, columnaGrid, fila);
+            panelCampos.add(txt, columnaGrid + 1, fila);
         }
     }
 
@@ -553,9 +654,10 @@ configuraciones.put(
 
         for (int i = 0; i < configActual.columnas.length; i++) {
             final int indice = i;
-            String columnaNombre = configActual.columnas[i];
+            String nombreColumna = configActual.columnas[i];
 
-            TableColumn<ObservableList<String>, String> columna = new TableColumn<>(columnaNombre);
+            TableColumn<ObservableList<String>, String> columna = new TableColumn<>(nombreColumna);
+
             columna.setCellValueFactory(data -> {
                 ObservableList<String> fila = data.getValue();
 
@@ -566,13 +668,15 @@ configuraciones.put(
                 return new ReadOnlyStringWrapper("");
             });
 
-            columna.setPrefWidth(180);
+            columna.setPrefWidth(145);
             tabla.getColumns().add(columna);
         }
 
-        tabla.getSelectionModel().selectedItemProperty().addListener((obs, anterior, seleccionado) -> {
-            if (seleccionado != null) {
-                cargarRegistroSeleccionado(seleccionado);
+        tabla.setOnMouseClicked(e -> {
+            ObservableList<String> fila = tabla.getSelectionModel().getSelectedItem();
+
+            if (fila != null) {
+                cargarRegistroSeleccionado(fila);
                 habilitarCampos(false, false);
             }
         });
@@ -583,7 +687,10 @@ configuraciones.put(
         tabla.getSelectionModel().clearSelection();
 
         habilitarCampos(true, true);
-        campos.get(configActual.columnaEstado).setText("A");
+
+        if (configActual.columnaEstado != null) {
+            campos.get(configActual.columnaEstado).setText("A");
+        }
 
         flaAct = 1;
         operacion = "ADICIONAR";
@@ -617,17 +724,33 @@ configuraciones.put(
         }
 
         cargarRegistroSeleccionado(fila);
-        campos.get(configActual.columnaEstado).setText("*");
 
-        habilitarCampos(false, false);
+        if (configActual.columnaEstado != null) {
+            campos.get(configActual.columnaEstado).setText("*");
 
-        flaAct = 1;
-        operacion = "ELIMINAR";
+            habilitarCampos(false, false);
 
-        mensaje("Registro preparado para eliminacion logica. Presione Actualizar");
+            flaAct = 1;
+            operacion = "ELIMINAR";
+
+            mensaje("Registro preparado para eliminacion logica. Presione Actualizar");
+        } else {
+            Optional<ButtonType> respuesta = confirmar("Esta tabla no tiene estado. Se eliminara fisicamente. Desea continuar?");
+
+            if (respuesta.isPresent() && respuesta.get() == ButtonType.OK) {
+                eliminarFisico();
+                cargarTabla();
+                limpiarCampos();
+            }
+        }
     }
 
     private void inactivar() {
+        if (configActual.columnaEstado == null) {
+            mensaje("Esta tabla no tiene campo de estado");
+            return;
+        }
+
         ObservableList<String> fila = tabla.getSelectionModel().getSelectedItem();
 
         if (fila == null) {
@@ -647,6 +770,11 @@ configuraciones.put(
     }
 
     private void reactivar() {
+        if (configActual.columnaEstado == null) {
+            mensaje("Esta tabla no tiene campo de estado");
+            return;
+        }
+
         ObservableList<String> fila = tabla.getSelectionModel().getSelectedItem();
 
         if (fila == null) {
@@ -694,18 +822,22 @@ configuraciones.put(
 
     private boolean insertarRegistro() {
         try {
-            if (!validarCamposObligatorios()) {
-                mensaje("Complete todos los campos obligatorios");
+            if (!validarDatos()) {
+                return false;
+            }
+
+            if (existeRegistroPK()) {
+                mensaje("Ya existe un registro con esa clave primaria");
                 return false;
             }
 
             StringBuilder sql = new StringBuilder();
             sql.append("INSERT INTO ");
-            sql.append(configActual.nombreTabla);
+            sql.append(q(configActual.nombreTabla));
             sql.append(" (");
 
             for (int i = 0; i < configActual.columnas.length; i++) {
-                sql.append(configActual.columnas[i]);
+                sql.append(q(configActual.columnas[i]));
 
                 if (i < configActual.columnas.length - 1) {
                     sql.append(", ");
@@ -727,14 +859,7 @@ configuraciones.put(
             PreparedStatement ps = con.prepareStatement(sql.toString());
 
             for (int i = 0; i < configActual.columnas.length; i++) {
-                String columna = configActual.columnas[i];
-                String valor = campos.get(columna).getText().trim();
-
-                if (columna.equals(configActual.columnaEstado)) {
-                    valor = "A";
-                }
-
-                ps.setString(i + 1, valor);
+                asignarParametro(ps, i + 1, configActual.columnas[i]);
             }
 
             int filas = ps.executeUpdate();
@@ -752,44 +877,45 @@ configuraciones.put(
     private boolean modificarRegistro() {
         try {
             if (!validarDatos()) {
-                mensaje("Complete todos los campos obligatorios");
                 return false;
             }
 
             StringBuilder sql = new StringBuilder();
             sql.append("UPDATE ");
-            sql.append(configActual.nombreTabla);
+            sql.append(q(configActual.nombreTabla));
             sql.append(" SET ");
 
             boolean primero = true;
 
             for (String columna : configActual.columnas) {
-                if (!columna.equals(configActual.columnaPK) && !columna.equals(configActual.columnaEstado)) {
+                if (!esPK(columna) && !columna.equals(configActual.columnaEstado)) {
                     if (!primero) {
                         sql.append(", ");
                     }
 
-                    sql.append(columna).append(" = ?");
+                    sql.append(q(columna)).append(" = ?");
                     primero = false;
                 }
             }
 
             sql.append(" WHERE ");
-            sql.append(configActual.columnaPK);
-            sql.append(" = ?");
+            sql.append(condicionPK());
 
             PreparedStatement ps = con.prepareStatement(sql.toString());
 
             int indice = 1;
 
             for (String columna : configActual.columnas) {
-                if (!columna.equals(configActual.columnaPK) && !columna.equals(configActual.columnaEstado)) {
-                    ps.setString(indice, campos.get(columna).getText().trim());
+                if (!esPK(columna) && !columna.equals(configActual.columnaEstado)) {
+                    asignarParametro(ps, indice, columna);
                     indice++;
                 }
             }
 
-            ps.setString(indice, campos.get(configActual.columnaPK).getText().trim());
+            for (String pk : configActual.columnasPK) {
+                ps.setString(indice, campos.get(pk).getText().trim());
+                indice++;
+            }
 
             int filas = ps.executeUpdate();
             ps.close();
@@ -803,28 +929,31 @@ configuraciones.put(
         }
     }
 
-   
-    private boolean esColumnaMes(String columna) {
-        return columna.toLowerCase().contains("mes");
-    }
-    private boolean esColumnaDia(String columna) {
-        return columna.toLowerCase().contains("dia");
-    }
-    private boolean esColumnaAnio(String columna) {
-        String c = columna.toLowerCase();
-        return c.contains("año") || c.contains("anio");
-    }
-
     private boolean actualizarEstado() {
         try {
-            String sql = "UPDATE " + configActual.nombreTabla +
-                         " SET " + configActual.columnaEstado + " = ?" +
-                         " WHERE " + configActual.columnaPK + " = ?";
+            if (configActual.columnaEstado == null) {
+                mensaje("La tabla no tiene columna de estado");
+                return false;
+            }
+
+            if (!validarForeignKeys()) {
+                return false;
+            }
+
+            String sql = "UPDATE " + q(configActual.nombreTabla) +
+                         " SET " + q(configActual.columnaEstado) + " = ?" +
+                         " WHERE " + condicionPK();
 
             PreparedStatement ps = con.prepareStatement(sql);
 
             ps.setString(1, campos.get(configActual.columnaEstado).getText().trim());
-            ps.setString(2, campos.get(configActual.columnaPK).getText().trim());
+
+            int indice = 2;
+
+            for (String pk : configActual.columnasPK) {
+                ps.setString(indice, campos.get(pk).getText().trim());
+                indice++;
+            }
 
             int filas = ps.executeUpdate();
             ps.close();
@@ -845,65 +974,36 @@ configuraciones.put(
         }
     }
 
-    private void cargarTabla() {
-            try {
-                datos.clear();
+    private void eliminarFisico() {
+        try {
+            String sql = "DELETE FROM " + q(configActual.nombreTabla) +
+                         " WHERE " + condicionPK();
 
-                StringBuilder sql = new StringBuilder();
-                sql.append("SELECT ");
+            PreparedStatement ps = con.prepareStatement(sql);
 
-                for (int i = 0; i < configActual.columnas.length; i++) {
-                    sql.append(configActual.columnas[i]);
+            int indice = 1;
 
-                    if (i < configActual.columnas.length - 1) {
-                        sql.append(", ");
-                    }
-                }
-
-                sql.append(" FROM ");
-                sql.append(configActual.nombreTabla);
-                sql.append(" ORDER BY ");
-                sql.append(configActual.columnaPK);
-
-                PreparedStatement ps = con.prepareStatement(sql.toString());
-                ResultSet rs = ps.executeQuery();
-
-                while (rs.next()) {
-                    ObservableList<String> fila = FXCollections.observableArrayList();
-
-                    for (String columna : configActual.columnas) {
-                        fila.add(rs.getString(columna));
-                    }
-
-                    datos.add(fila);
-                }
-
-                rs.close();
-                ps.close();
-
-            } catch (SQLException e) {
-                mensaje("Error al cargar tabla: " + e.getMessage());
+            for (String pk : configActual.columnasPK) {
+                ps.setString(indice, campos.get(pk).getText().trim());
+                indice++;
             }
-        }
 
-        private void cargarRegistroSeleccionado(ObservableList<String> fila) {
-            for (int i = 0; i < configActual.columnas.length; i++) {
-                String columna = configActual.columnas[i];
+            int filas = ps.executeUpdate();
+            ps.close();
 
-                if (i < fila.size()) {
-                    campos.get(columna).setText(fila.get(i));
-                }
-            }
+            mensaje("Registro eliminado fisicamente. Filas afectadas: " + filas);
+
+        } catch (SQLException e) {
+            mensaje("Error al eliminar: " + e.getMessage());
         }
+    }
 
     private boolean validarDatos() {
         for (String columna : configActual.columnas) {
-            TextField txt   = campos.get(columna);
-            String    valor = txt.getText().trim();
+            TextField txt = campos.get(columna);
+            String valor = txt.getText().trim();
 
-            if (configActual.columnaEstado != null
-                    && columna.equals(configActual.columnaEstado)
-                    && valor.equals("")) {
+            if (configActual.columnaEstado != null && columna.equals(configActual.columnaEstado) && valor.equals("")) {
                 txt.setText("A");
                 valor = "A";
             }
@@ -919,6 +1019,7 @@ configuraciones.put(
 
             if (configActual.longitudes.containsKey(columna)) {
                 int max = configActual.longitudes.get(columna);
+
                 if (valor.length() > max) {
                     mensaje("El campo " + columna + " no debe superar " + max + " caracteres");
                     return false;
@@ -933,22 +1034,27 @@ configuraciones.put(
                         mensaje("El campo " + columna + " debe estar entre 1 y 12");
                         return false;
                     }
+
                     if (esColumnaDia(columna) && (numero < 1 || numero > 31)) {
                         mensaje("El campo " + columna + " debe estar entre 1 y 31");
                         return false;
                     }
+
                     if (esColumnaAnio(columna) && (numero < 1900 || numero > 2100)) {
                         mensaje("El campo " + columna + " debe estar entre 1900 y 2100");
                         return false;
                     }
+
                     if (columna.equals("PreCuo") && (numero < 1 || numero > 10)) {
                         mensaje("El numero de cuotas debe estar entre 1 y 10");
                         return false;
                     }
+
                     if (columna.equals("PreCuoDes") && numero < 0) {
                         mensaje("Las cuotas descontadas no pueden ser negativas");
                         return false;
                     }
+
                 } catch (NumberFormatException e) {
                     mensaje("El campo " + columna + " debe ser numerico entero");
                     return false;
@@ -958,10 +1064,12 @@ configuraciones.put(
             if (configActual.columnasDecimales.contains(columna)) {
                 try {
                     BigDecimal decimal = new BigDecimal(valor);
+
                     if (decimal.compareTo(BigDecimal.ZERO) < 0) {
                         mensaje("El campo " + columna + " no puede ser negativo");
                         return false;
                     }
+
                 } catch (NumberFormatException e) {
                     mensaje("El campo " + columna + " debe ser decimal");
                     return false;
@@ -976,11 +1084,13 @@ configuraciones.put(
         try {
             for (ForeignKeySimple fk : configActual.foreignKeysSimples) {
                 String valor = campos.get(fk.columnaLocal).getText().trim();
-                if (valor.equals("")) continue;   // campo opcional vacío → skip
+
+                if (valor.equals("")) {
+                    continue;
+                }
 
                 if (!existeValor(fk.tablaReferencia, fk.columnaReferencia, valor)) {
-                    mensaje("No existe " + fk.columnaLocal + " = " + valor
-                            + " en " + fk.tablaReferencia);
+                    mensaje("No existe " + fk.columnaLocal + " = " + valor + " en " + fk.tablaReferencia);
                     return false;
                 }
             }
@@ -1000,216 +1110,167 @@ configuraciones.put(
         }
     }
 
-    private boolean existeValor(String tablaRef, String columnaRef, String valor)
-            throws SQLException {
+    private boolean existeValor(String tablaRef, String columnaRef, String valor) throws SQLException {
         String sql = "SELECT 1 FROM " + q(tablaRef) +
-                    " WHERE " + q(columnaRef) + " = ? LIMIT 1";
+                     " WHERE " + q(columnaRef) + " = ? LIMIT 1";
+
         PreparedStatement ps = con.prepareStatement(sql);
         ps.setString(1, valor);
+
         ResultSet rs = ps.executeQuery();
         boolean existe = rs.next();
-        rs.close(); ps.close();
+
+        rs.close();
+        ps.close();
+
         return existe;
     }
 
     private boolean existeValorCompuesto(ForeignKeyCompuesta fk) throws SQLException {
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT 1 FROM ").append(q(fk.tablaReferencia)).append(" WHERE ");
+        sql.append("SELECT 1 FROM ");
+        sql.append(q(fk.tablaReferencia));
+        sql.append(" WHERE ");
 
         for (int i = 0; i < fk.columnasReferencia.length; i++) {
             sql.append(q(fk.columnasReferencia[i])).append(" = ?");
-            if (i < fk.columnasReferencia.length - 1) sql.append(" AND ");
+
+            if (i < fk.columnasReferencia.length - 1) {
+                sql.append(" AND ");
+            }
         }
+
         sql.append(" LIMIT 1");
 
         PreparedStatement ps = con.prepareStatement(sql.toString());
+
         for (int i = 0; i < fk.columnasLocales.length; i++) {
-            ps.setString(i + 1, campos.get(fk.columnasLocales[i]).getText().trim());
+            String valor = campos.get(fk.columnasLocales[i]).getText().trim();
+            ps.setString(i + 1, valor);
         }
 
         ResultSet rs = ps.executeQuery();
         boolean existe = rs.next();
-        rs.close(); ps.close();
+
+        rs.close();
+        ps.close();
+
         return existe;
     }
 
+    private boolean existeRegistroPK() throws SQLException {
+        String sql = "SELECT 1 FROM " + q(configActual.nombreTabla) +
+                     " WHERE " + condicionPK() +
+                     " LIMIT 1";
 
+        PreparedStatement ps = con.prepareStatement(sql);
+
+        int indice = 1;
+
+        for (String pk : configActual.columnasPK) {
+            ps.setString(indice, campos.get(pk).getText().trim());
+            indice++;
+        }
+
+        ResultSet rs = ps.executeQuery();
+        boolean existe = rs.next();
+
+        rs.close();
+        ps.close();
+
+        return existe;
+    }
+
+    private void asignarParametro(PreparedStatement ps, int indice, String columna) throws SQLException {
+        String valor = campos.get(columna).getText().trim();
+
+        if (configActual.columnaEstado != null && columna.equals(configActual.columnaEstado) && valor.equals("")) {
+            valor = "A";
+        }
+
+        if (configActual.columnasOpcionales.contains(columna) && valor.equals("")) {
+            ps.setNull(indice, Types.NULL);
+        } else {
+            ps.setString(indice, valor);
+        }
+    }
+
+    private void cargarTabla() {
+        try {
+            datos.clear();
+
+            StringBuilder sql = new StringBuilder();
+            sql.append("SELECT ");
+
+            for (int i = 0; i < configActual.columnas.length; i++) {
+                sql.append(q(configActual.columnas[i]));
+
+                if (i < configActual.columnas.length - 1) {
+                    sql.append(", ");
+                }
+            }
+
+            sql.append(" FROM ");
+            sql.append(q(configActual.nombreTabla));
+            sql.append(" ORDER BY ");
+
+            for (int i = 0; i < configActual.columnasPK.length; i++) {
+                sql.append(q(configActual.columnasPK[i]));
+
+                if (i < configActual.columnasPK.length - 1) {
+                    sql.append(", ");
+                }
+            }
+
+            PreparedStatement ps = con.prepareStatement(sql.toString());
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                ObservableList<String> fila = FXCollections.observableArrayList();
+
+                for (String columna : configActual.columnas) {
+                    String valor = rs.getString(columna);
+
+                    if (valor == null) {
+                        valor = "";
+                    }
+
+                    fila.add(valor);
+                }
+
+                datos.add(fila);
+            }
+
+            rs.close();
+            ps.close();
+
+        } catch (SQLException e) {
+            mensaje("Error al cargar tabla: " + e.getMessage());
+        }
+    }
+
+    private void cargarRegistroSeleccionado(ObservableList<String> fila) {
+        for (int i = 0; i < configActual.columnas.length; i++) {
+            String columna = configActual.columnas[i];
+
+            if (i < fila.size()) {
+                campos.get(columna).setText(fila.get(i));
+            }
+        }
+    }
 
     private void habilitarCampos(boolean clave, boolean datosEditables) {
         for (String columna : configActual.columnas) {
             TextField txt = campos.get(columna);
 
-            if (columna.equals(configActual.columnaPK)) {
+            if (esPK(columna)) {
                 txt.setEditable(clave);
-            } else if (columna.equals(configActual.columnaEstado)) {
+            } else if (configActual.columnaEstado != null && columna.equals(configActual.columnaEstado)) {
                 txt.setEditable(false);
             } else {
                 txt.setEditable(datosEditables);
             }
         }
-    }
-
-    private boolean esPK(String columna) {
-    for (String pk : configActual.columnasPK) {
-        if (pk.equals(columna)) return true;
-    }
-    return false;
-}
-
-    private String condicionPK() {
-        StringBuilder sql = new StringBuilder();
-        for (int i = 0; i < configActual.columnasPK.length; i++) {
-            sql.append(q(configActual.columnasPK[i])).append(" = ?");
-            if (i < configActual.columnasPK.length - 1) sql.append(" AND ");
-        }
-        return sql.toString();
-    }
-
-    private boolean existeRegistroPK() throws SQLException {
-        String sql = "SELECT 1 FROM " + q(configActual.nombreTabla) +
-                    " WHERE " + condicionPK() + " LIMIT 1";
-        PreparedStatement ps = con.prepareStatement(sql);
-        int indice = 1;
-        for (String pk : configActual.columnasPK) {
-            ps.setString(indice++, campos.get(pk).getText().trim());
-        }
-        ResultSet rs = ps.executeQuery();
-        boolean existe = rs.next();
-        rs.close(); ps.close();
-        return existe;
-    }
-
-    private void eliminarFisico() {
-        try {
-            String sql = "DELETE FROM " + q(configActual.nombreTabla) +
-                        " WHERE " + condicionPK();
-            PreparedStatement ps = con.prepareStatement(sql);
-            int indice = 1;
-            for (String pk : configActual.columnasPK) {
-                ps.setString(indice++, campos.get(pk).getText().trim());
-            }
-            int filas = ps.executeUpdate();
-            ps.close();
-            mensaje("Registro eliminado fisicamente. Filas afectadas: " + filas);
-        } catch (SQLException e) {
-            mensaje("Error al eliminar: " + e.getMessage());
-        }
-    }
-
-
-    private void eliminar() {
-        ObservableList<String> fila = tabla.getSelectionModel().getSelectedItem();
-        if (fila == null) { mensaje("Seleccione un registro para eliminar"); return; }
-
-        cargarRegistroSeleccionado(fila);
-
-        if (configActual.columnaEstado != null) {
-            campos.get(configActual.columnaEstado).setText("*");
-            habilitarCampos(false, false);
-            flaAct = 1;
-            operacion = "ELIMINAR";
-            mensaje("Registro preparado para eliminacion logica. Presione Actualizar");
-        } else {
-            Optional<ButtonType> respuesta = confirmar(
-                "Esta tabla no tiene estado. Se eliminara fisicamente. Desea continuar?");
-            if (respuesta.isPresent() && respuesta.get() == ButtonType.OK) {
-                eliminarFisico();
-                cargarTabla();
-                limpiarCampos();
-            }
-        }
-    }
-
-    private void crearCampos() {
-    panelCampos.getChildren().clear();
-    campos = new LinkedHashMap<>();
-
-    for (int i = 0; i < configActual.columnas.length; i++) {
-        String columna = configActual.columnas[i];
-
-        Label lbl = new Label(columna + ":");
-        lbl.setStyle("-fx-font-weight: bold;");
-
-        TextField txt = new TextField();
-        txt.setPrefWidth(245);
-
-        if (columna.equals(configActual.columnaEstado)) {
-            txt.setEditable(false);
-        }
-
-        campos.put(columna, txt);
-
-        int fila        = i / 2;
-        int columnaGrid = (i % 2) * 2;    // 0 o 2
-
-        panelCampos.add(lbl, columnaGrid,     fila);
-        panelCampos.add(txt, columnaGrid + 1, fila);
-    }
-}
-
-
-private String q(String texto) {
-    return "`" + texto + "`";
-}
-
-
-
-private void asignarParametro(PreparedStatement ps, int indice, String columna)
-        throws SQLException {
-    String valor = campos.get(columna).getText().trim();
-
-    if (configActual.columnaEstado != null
-            && columna.equals(configActual.columnaEstado)
-            && valor.equals("")) {
-        valor = "A";
-    }
-
-    if (configActual.columnasOpcionales.contains(columna) && valor.equals("")) {
-        ps.setNull(indice, Types.NULL);
-    } else {
-        ps.setString(indice, valor);
-    }
-}
-
-
-
-while (rs.next()) {
-    ObservableList<String> fila = FXCollections.observableArrayList();
-    for (String columna : configActual.columnas) {
-        String valor = rs.getString(columna);
-        if (valor == null) valor = "";
-        fila.add(valor);
-    }
-    datos.add(fila);
-}
-
-
-tabla.setOnMouseClicked(e -> {
-    ObservableList<String> fila = tabla.getSelectionModel().getSelectedItem();
-    if (fila != null) {
-        cargarRegistroSeleccionado(fila);
-        habilitarCampos(false, false);
-    }
-});
-
-private void cambiarModulo(String nombreTabla) {
-    configActual = configuraciones.get(nombreTabla);
-
-    lblTitulo.setText(configActual.titulo);
-    lblDescripcion.setText(configActual.descripcion + " - " + configActual.nombreTabla);
-
-    crearCampos();
-    crearColumnas();
-    cargarTabla();
-    cancelar();
-    }
-
-    private Optional<ButtonType> confirmar(String texto) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Confirmacion");
-        alert.setHeaderText(null);
-        alert.setContentText(texto);
-        return alert.showAndWait();
     }
 
     private void limpiarCampos() {
@@ -1232,6 +1293,49 @@ private void cambiarModulo(String nombreTabla) {
         System.exit(0);
     }
 
+    private boolean esPK(String columna) {
+        for (String pk : configActual.columnasPK) {
+            if (pk.equals(columna)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private String condicionPK() {
+        StringBuilder sql = new StringBuilder();
+
+        for (int i = 0; i < configActual.columnasPK.length; i++) {
+            sql.append(q(configActual.columnasPK[i])).append(" = ?");
+
+            if (i < configActual.columnasPK.length - 1) {
+                sql.append(" AND ");
+            }
+        }
+
+        return sql.toString();
+    }
+
+    private boolean esColumnaMes(String columna) {
+        String c = columna.toLowerCase();
+        return c.contains("mes");
+    }
+
+    private boolean esColumnaDia(String columna) {
+        String c = columna.toLowerCase();
+        return c.contains("dia");
+    }
+
+    private boolean esColumnaAnio(String columna) {
+        String c = columna.toLowerCase();
+        return c.contains("año") || c.contains("anio");
+    }
+
+    private String q(String texto) {
+        return "`" + texto + "`";
+    }
+
     private void cerrarConexion() {
         try {
             if (con != null && !con.isClosed()) {
@@ -1250,42 +1354,49 @@ private void cambiarModulo(String nombreTabla) {
         alert.showAndWait();
     }
 
+    private Optional<ButtonType> confirmar(String texto) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Confirmacion");
+        alert.setHeaderText(null);
+        alert.setContentText(texto);
+        return alert.showAndWait();
+    }
+
     public static void main(String[] args) {
         launch(args);
     }
 
     private static class TablaConfig {
+
         String nombreTabla;
         String titulo;
         String descripcion;
         String[] columnas;
-        String[] columnasPK;         // PK compuesta como array
-        String columnaEstado;        // nullable para tablas sin estado
+        String[] columnasPK;
+        String columnaEstado;
 
         Set<String> columnasOpcionales;
         Set<String> columnasEnteras;
         Set<String> columnasDecimales;
         Map<String, Integer> longitudes;
 
-        List<ForeignKeySimple>    foreignKeysSimples;
+        List<ForeignKeySimple> foreignKeysSimples;
         List<ForeignKeyCompuesta> foreignKeysCompuestas;
 
-        TablaConfig(String nombreTabla, String titulo, String descripcion,
-                    String[] columnas, String[] columnasPK, String columnaEstado,
-                    String[] columnasOpcionales) {
-            this.nombreTabla   = nombreTabla;
-            this.titulo        = titulo;
-            this.descripcion   = descripcion;
-            this.columnas      = columnas;
-            this.columnasPK    = columnasPK;
+        TablaConfig(String nombreTabla, String titulo, String descripcion, String[] columnas, String[] columnasPK, String columnaEstado, String[] columnasOpcionales) {
+            this.nombreTabla = nombreTabla;
+            this.titulo = titulo;
+            this.descripcion = descripcion;
+            this.columnas = columnas;
+            this.columnasPK = columnasPK;
             this.columnaEstado = columnaEstado;
 
             this.columnasOpcionales = new HashSet<>(Arrays.asList(columnasOpcionales));
-            this.columnasEnteras    = new HashSet<>();
-            this.columnasDecimales  = new HashSet<>();
-            this.longitudes         = new HashMap<>();
+            this.columnasEnteras = new HashSet<>();
+            this.columnasDecimales = new HashSet<>();
+            this.longitudes = new HashMap<>();
 
-            this.foreignKeysSimples    = new ArrayList<>();
+            this.foreignKeysSimples = new ArrayList<>();
             this.foreignKeysCompuestas = new ArrayList<>();
         }
 
@@ -1316,25 +1427,28 @@ private void cambiarModulo(String nombreTabla) {
     }
 
     private static class ForeignKeySimple {
+
         String columnaLocal;
         String tablaReferencia;
         String columnaReferencia;
 
         ForeignKeySimple(String columnaLocal, String tablaReferencia, String columnaReferencia) {
-            this.columnaLocal      = columnaLocal;
-            this.tablaReferencia   = tablaReferencia;
+            this.columnaLocal = columnaLocal;
+            this.tablaReferencia = tablaReferencia;
             this.columnaReferencia = columnaReferencia;
         }
     }
 
     private static class ForeignKeyCompuesta {
+
         String[] columnasLocales;
-        String   tablaReferencia;
+        String tablaReferencia;
         String[] columnasReferencia;
 
         ForeignKeyCompuesta(String[] columnasLocales, String tablaReferencia, String[] columnasReferencia) {
-            this.columnasLocales    = columnasLocales;
-            this.tablaReferencia    = tablaReferencia;
+            this.columnasLocales = columnasLocales;
+            this.tablaReferencia = tablaReferencia;
             this.columnasReferencia = columnasReferencia;
         }
     }
+}
