@@ -803,6 +803,18 @@ configuraciones.put(
         }
     }
 
+   
+    private boolean esColumnaMes(String columna) {
+        return columna.toLowerCase().contains("mes");
+    }
+    private boolean esColumnaDia(String columna) {
+        return columna.toLowerCase().contains("dia");
+    }
+    private boolean esColumnaAnio(String columna) {
+        String c = columna.toLowerCase();
+        return c.contains("año") || c.contains("anio");
+    }
+
     private boolean actualizarEstado() {
         try {
             String sql = "UPDATE " + configActual.nombreTabla +
@@ -958,6 +970,67 @@ private boolean validarDatos() {
     }
 
     return validarForeignKeys();
+}
+
+private boolean validarForeignKeys() {
+    try {
+        for (ForeignKeySimple fk : configActual.foreignKeysSimples) {
+            String valor = campos.get(fk.columnaLocal).getText().trim();
+            if (valor.equals("")) continue;   // campo opcional vacío → skip
+
+            if (!existeValor(fk.tablaReferencia, fk.columnaReferencia, valor)) {
+                mensaje("No existe " + fk.columnaLocal + " = " + valor
+                        + " en " + fk.tablaReferencia);
+                return false;
+            }
+        }
+
+        for (ForeignKeyCompuesta fk : configActual.foreignKeysCompuestas) {
+            if (!existeValorCompuesto(fk)) {
+                mensaje("No existe la relacion compuesta en " + fk.tablaReferencia);
+                return false;
+            }
+        }
+
+        return true;
+
+    } catch (SQLException e) {
+        mensaje("Error al validar claves foraneas: " + e.getMessage());
+        return false;
+    }
+}
+
+private boolean existeValor(String tablaRef, String columnaRef, String valor)
+        throws SQLException {
+    String sql = "SELECT 1 FROM " + q(tablaRef) +
+                 " WHERE " + q(columnaRef) + " = ? LIMIT 1";
+    PreparedStatement ps = con.prepareStatement(sql);
+    ps.setString(1, valor);
+    ResultSet rs = ps.executeQuery();
+    boolean existe = rs.next();
+    rs.close(); ps.close();
+    return existe;
+}
+
+private boolean existeValorCompuesto(ForeignKeyCompuesta fk) throws SQLException {
+    StringBuilder sql = new StringBuilder();
+    sql.append("SELECT 1 FROM ").append(q(fk.tablaReferencia)).append(" WHERE ");
+
+    for (int i = 0; i < fk.columnasReferencia.length; i++) {
+        sql.append(q(fk.columnasReferencia[i])).append(" = ?");
+        if (i < fk.columnasReferencia.length - 1) sql.append(" AND ");
+    }
+    sql.append(" LIMIT 1");
+
+    PreparedStatement ps = con.prepareStatement(sql.toString());
+    for (int i = 0; i < fk.columnasLocales.length; i++) {
+        ps.setString(i + 1, campos.get(fk.columnasLocales[i]).getText().trim());
+    }
+
+    ResultSet rs = ps.executeQuery();
+    boolean existe = rs.next();
+    rs.close(); ps.close();
+    return existe;
 }
 
     private void habilitarCampos(boolean clave, boolean datosEditables) {
