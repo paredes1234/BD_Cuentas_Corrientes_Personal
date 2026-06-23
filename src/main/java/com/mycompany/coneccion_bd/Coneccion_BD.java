@@ -129,6 +129,59 @@ public class Coneccion_BD extends Application {
         .fk("TraEstCod",    "R1Z_ESTADO_TRABAJADOR", "EstTraCod")
         .fk("TraEstReg",    "GZZ_ESTADO_REGISTRO",   "EstRegCod")
     );
+    configuraciones.put(
+    "R1T_PRESTAMO",
+    new TablaConfig(
+        "R1T_PRESTAMO",
+        "Prestamos",
+        "Tabla transaccional de prestamos",
+        new String[]{
+            "PreTraCod","PreTipCod","PreSecCod",
+            "PreFecAño","PreFecMes","PreFecDia",
+            "PreMon","PreTasInt","PreTasIntSunat",
+            "PreCuo","PreCuoDes","PreTipIntCod","PreEstReg","PreComCod"
+        },
+        new String[]{"PreTraCod","PreTipCod","PreSecCod"},
+        "PreEstReg",
+        new String[]{}
+    )
+    .enteros("PreTraCod","PreTipCod","PreSecCod",
+             "PreFecAño","PreFecMes","PreFecDia",
+             "PreCuo","PreCuoDes","PreTipIntCod","PreComCod")
+    .decimales("PreMon","PreTasInt","PreTasIntSunat")
+    .max("PreEstReg", 1)
+    .fk("PreTraCod",   "R1M_TRABAJADOR",      "TraCod")
+    .fk("PreTipCod",   "R1Z_TIPO_PRESTAMO",   "TipPreCod")
+    .fk("PreTipIntCod","R1Z_TIPO_INTERES",    "TipIntCod")
+    .fk("PreEstReg",   "GZZ_ESTADO_REGISTRO", "EstRegCod")
+    .fk("PreComCod",   "GZZ_COMPANIA",        "ComCod")
+);
+
+configuraciones.put(
+    "R1T_PRESTAMO_MOVIMIENTO",
+    new TablaConfig(
+        "R1T_PRESTAMO_MOVIMIENTO",
+        "Movimientos de Prestamo",
+        "Tabla transaccional de movimientos de prestamos",
+        new String[]{
+            "MovTra","MovTipPre","MovSec","MovAnio","MovMes",
+            "MovNumPla","MovTip","MovMon","MovMonInt","MovEstReg"
+        },
+        new String[]{"MovTra","MovTipPre","MovSec","MovAnio","MovMes","MovNumPla"},
+        "MovEstReg",
+        new String[]{}
+    )
+    .enteros("MovTra","MovTipPre","MovSec","MovAnio","MovMes","MovNumPla")
+    .decimales("MovMon","MovMonInt")
+    .max("MovTip", 1).max("MovEstReg", 1)
+    .fk("MovTip",    "R1Z_TIPO_MOVIMIENTO", "TipMovCod")
+    .fk("MovEstReg", "GZZ_ESTADO_REGISTRO", "EstRegCod")
+    .fkCompuesta(
+        new String[]{"MovTra","MovTipPre","MovSec"},
+        "R1T_PRESTAMO",
+        new String[]{"PreTraCod","PreTipCod","PreSecCod"}
+    )
+);
 
         configuraciones.put(
             "GZZ_ESTADO_REGISTRO",
