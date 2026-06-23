@@ -844,17 +844,86 @@ public class Coneccion_BD extends Application {
     }
 
     private static class TablaConfig {
-
         String nombreTabla;
+        String titulo;
+        String descripcion;
         String[] columnas;
-        String columnaPK;
-        String columnaEstado;
+        String[] columnasPK;         // PK compuesta como array
+        String columnaEstado;        // nullable para tablas sin estado
 
-        TablaConfig(String nombreTabla, String[] columnas, String columnaPK, String columnaEstado) {
-            this.nombreTabla = nombreTabla;
-            this.columnas = columnas;
-            this.columnaPK = columnaPK;
+        Set<String> columnasOpcionales;
+        Set<String> columnasEnteras;
+        Set<String> columnasDecimales;
+        Map<String, Integer> longitudes;
+
+        List<ForeignKeySimple>    foreignKeysSimples;
+        List<ForeignKeyCompuesta> foreignKeysCompuestas;
+
+        TablaConfig(String nombreTabla, String titulo, String descripcion,
+                    String[] columnas, String[] columnasPK, String columnaEstado,
+                    String[] columnasOpcionales) {
+            this.nombreTabla   = nombreTabla;
+            this.titulo        = titulo;
+            this.descripcion   = descripcion;
+            this.columnas      = columnas;
+            this.columnasPK    = columnasPK;
             this.columnaEstado = columnaEstado;
+
+            this.columnasOpcionales = new HashSet<>(Arrays.asList(columnasOpcionales));
+            this.columnasEnteras    = new HashSet<>();
+            this.columnasDecimales  = new HashSet<>();
+            this.longitudes         = new HashMap<>();
+
+            this.foreignKeysSimples    = new ArrayList<>();
+            this.foreignKeysCompuestas = new ArrayList<>();
+        }
+
+        TablaConfig enteros(String... columnas) {
+            this.columnasEnteras.addAll(Arrays.asList(columnas));
+            return this;
+        }
+
+        TablaConfig decimales(String... columnas) {
+            this.columnasDecimales.addAll(Arrays.asList(columnas));
+            return this;
+        }
+
+        TablaConfig max(String columna, int longitud) {
+            this.longitudes.put(columna, longitud);
+            return this;
+        }
+
+        TablaConfig fk(String columnaLocal, String tablaReferencia, String columnaReferencia) {
+            this.foreignKeysSimples.add(new ForeignKeySimple(columnaLocal, tablaReferencia, columnaReferencia));
+            return this;
+        }
+
+        TablaConfig fkCompuesta(String[] columnasLocales, String tablaReferencia, String[] columnasReferencia) {
+            this.foreignKeysCompuestas.add(new ForeignKeyCompuesta(columnasLocales, tablaReferencia, columnasReferencia));
+            return this;
         }
     }
-}
+
+    private static class ForeignKeySimple {
+        String columnaLocal;
+        String tablaReferencia;
+        String columnaReferencia;
+
+        ForeignKeySimple(String columnaLocal, String tablaReferencia, String columnaReferencia) {
+            this.columnaLocal      = columnaLocal;
+            this.tablaReferencia   = tablaReferencia;
+            this.columnaReferencia = columnaReferencia;
+        }
+    }
+
+    private static class ForeignKeyCompuesta {
+        String[] columnasLocales;
+        String   tablaReferencia;
+        String[] columnasReferencia;
+
+        ForeignKeyCompuesta(String[] columnasLocales, String tablaReferencia, String[] columnasReferencia) {
+            this.columnasLocales    = columnasLocales;
+            this.tablaReferencia    = tablaReferencia;
+            this.columnasReferencia = columnasReferencia;
+        }
+    }
