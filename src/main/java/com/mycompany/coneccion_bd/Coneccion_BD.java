@@ -183,6 +183,30 @@ configuraciones.put(
     )
 );
 
+configuraciones.put(
+    "R1T_PRESTAMO_CALCULO",
+    new TablaConfig(
+        "R1T_PRESTAMO_CALCULO",
+        "Calculo de Prestamo",
+        "Tabla de control de calculos del prestamo",
+        new String[]{
+            "CalTraCod","CalTipCod","CalSecCod",
+            "PreMonInt","PreMonTot","PreMonCuoInt",
+            "PreMonAcuInt","PreMonCuo","PreMonAcu"
+        },
+        new String[]{"CalTraCod","CalTipCod","CalSecCod"},
+        null,          // sin columnaEstado
+        new String[]{}
+    )
+    .enteros("CalTraCod","CalTipCod","CalSecCod")
+    .decimales("PreMonInt","PreMonTot","PreMonCuoInt","PreMonAcuInt","PreMonCuo","PreMonAcu")
+    .fkCompuesta(
+        new String[]{"CalTraCod","CalTipCod","CalSecCod"},
+        "R1T_PRESTAMO",
+        new String[]{"PreTraCod","PreTipCod","PreSecCod"}
+    )
+);
+
         configuraciones.put(
             "GZZ_ESTADO_REGISTRO",
             new TablaConfig(
