@@ -180,10 +180,10 @@ public class Coneccion_BD extends Application {
     }
 
     private HBox crearPanelBotones1() {
-        Button btnAdicionar = new Button("Adicionar");
-        Button btnModificar = new Button("Modificar");
-        Button btnEliminar = new Button("Eliminar");
-        Button btnCancelar = new Button("Cancelar");
+        Button btnAdicionar = botonAccion("Adicionar", "#16a34a");
+        Button btnModificar = botonAccion("Modificar", "#2563eb");
+        Button btnEliminar  = botonAccion("Eliminar",  "#dc2626");
+        Button btnCancelar  = botonAccion("Cancelar",  "#6b7280");
 
         btnAdicionar.setOnAction(e -> adicionar());
         btnModificar.setOnAction(e -> modificar());
@@ -192,15 +192,14 @@ public class Coneccion_BD extends Application {
 
         HBox hbox = new HBox(10);
         hbox.getChildren().addAll(btnAdicionar, btnModificar, btnEliminar, btnCancelar);
-
         return hbox;
     }
 
     private HBox crearPanelBotones2() {
-        Button btnInactivar = new Button("Inactivar");
-        Button btnReactivar = new Button("Reactivar");
-        Button btnActualizar = new Button("Actualizar");
-        Button btnSalir = new Button("Salir");
+        Button btnInactivar = botonAccion("Inactivar", "#f59e0b");
+        Button btnReactivar = botonAccion("Reactivar", "#059669");
+        Button btnActualizar = botonAccion("Actualizar", "#7c3aed");
+        Button btnSalir     = botonAccion("Salir",      "#111827");
 
         btnInactivar.setOnAction(e -> inactivar());
         btnReactivar.setOnAction(e -> reactivar());
@@ -209,8 +208,20 @@ public class Coneccion_BD extends Application {
 
         HBox hbox = new HBox(10);
         hbox.getChildren().addAll(btnInactivar, btnReactivar, btnActualizar, btnSalir);
-
         return hbox;
+    }
+
+    private Button botonAccion(String texto, String color) {
+    Button btn = new Button(texto);
+    btn.setPrefWidth(125);
+    btn.setPrefHeight(36);
+    btn.setStyle(
+        "-fx-background-color: " + color + ";" +
+        "-fx-text-fill: white;" +
+        "-fx-font-weight: bold;" +
+        "-fx-background-radius: 8;"
+    );
+    return btn;
     }
 
     private VBox crearMenuLateral() {
