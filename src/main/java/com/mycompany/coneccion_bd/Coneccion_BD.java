@@ -98,6 +98,38 @@ public class Coneccion_BD extends Application {
     private void crearConfiguraciones() {
         configuraciones = new LinkedHashMap<>();
 
+         configuraciones.put(
+        "R1M_TRABAJADOR",
+        new TablaConfig(
+            "R1M_TRABAJADOR",
+            "Trabajadores",
+            "Tabla maestra de trabajadores",
+            new String[]{
+                "TraCod", "TraComCod", "TraTipCod", "TraNom",
+                "TraFecIngAño", "TraFecIngMes", "TraFecIngDia",
+                "TraFecCesAño", "TraFecCesMes", "TraFecCesDia",
+                "TraFecVacAño", "TraFecVacMes", "TraFecVacDia",
+                "TraCenCosCod", "TraEstCod", "TraEstReg"
+            },
+            new String[]{"TraCod"},
+            "TraEstReg",
+            new String[]{
+                "TraFecCesAño", "TraFecCesMes", "TraFecCesDia",
+                "TraFecVacAño", "TraFecVacMes", "TraFecVacDia"
+            }
+        )
+        .enteros("TraCod","TraComCod","TraTipCod",
+                "TraFecIngAño","TraFecIngMes","TraFecIngDia",
+                "TraFecCesAño","TraFecCesMes","TraFecCesDia",
+                "TraFecVacAño","TraFecVacMes","TraFecVacDia")
+        .max("TraNom", 100).max("TraCenCosCod", 4).max("TraEstCod", 1).max("TraEstReg", 1)
+        .fk("TraComCod",    "GZZ_COMPANIA",          "ComCod")
+        .fk("TraTipCod",    "R1Z_TIPO_TRABAJADOR",   "TipTraCod")
+        .fk("TraCenCosCod", "R1Z_CENTRO_COSTO",      "CenCosCod")
+        .fk("TraEstCod",    "R1Z_ESTADO_TRABAJADOR", "EstTraCod")
+        .fk("TraEstReg",    "GZZ_ESTADO_REGISTRO",   "EstRegCod")
+    );
+
         configuraciones.put(
             "GZZ_ESTADO_REGISTRO",
             new TablaConfig(
