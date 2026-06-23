@@ -846,192 +846,194 @@ configuraciones.put(
     }
 
     private void cargarTabla() {
-        try {
-            datos.clear();
+            try {
+                datos.clear();
 
-            StringBuilder sql = new StringBuilder();
-            sql.append("SELECT ");
+                StringBuilder sql = new StringBuilder();
+                sql.append("SELECT ");
 
+                for (int i = 0; i < configActual.columnas.length; i++) {
+                    sql.append(configActual.columnas[i]);
+
+                    if (i < configActual.columnas.length - 1) {
+                        sql.append(", ");
+                    }
+                }
+
+                sql.append(" FROM ");
+                sql.append(configActual.nombreTabla);
+                sql.append(" ORDER BY ");
+                sql.append(configActual.columnaPK);
+
+                PreparedStatement ps = con.prepareStatement(sql.toString());
+                ResultSet rs = ps.executeQuery();
+
+                while (rs.next()) {
+                    ObservableList<String> fila = FXCollections.observableArrayList();
+
+                    for (String columna : configActual.columnas) {
+                        fila.add(rs.getString(columna));
+                    }
+
+                    datos.add(fila);
+                }
+
+                rs.close();
+                ps.close();
+
+            } catch (SQLException e) {
+                mensaje("Error al cargar tabla: " + e.getMessage());
+            }
+        }
+
+        private void cargarRegistroSeleccionado(ObservableList<String> fila) {
             for (int i = 0; i < configActual.columnas.length; i++) {
-                sql.append(configActual.columnas[i]);
+                String columna = configActual.columnas[i];
 
-                if (i < configActual.columnas.length - 1) {
-                    sql.append(", ");
+                if (i < fila.size()) {
+                    campos.get(columna).setText(fila.get(i));
+                }
+            }
+        }
+
+    private boolean validarDatos() {
+        for (String columna : configActual.columnas) {
+            TextField txt   = campos.get(columna);
+            String    valor = txt.getText().trim();
+
+            if (configActual.columnaEstado != null
+                    && columna.equals(configActual.columnaEstado)
+                    && valor.equals("")) {
+                txt.setText("A");
+                valor = "A";
+            }
+
+            if (!configActual.columnasOpcionales.contains(columna) && valor.equals("")) {
+                mensaje("El campo " + columna + " es obligatorio");
+                return false;
+            }
+
+            if (configActual.columnasOpcionales.contains(columna) && valor.equals("")) {
+                continue;
+            }
+
+            if (configActual.longitudes.containsKey(columna)) {
+                int max = configActual.longitudes.get(columna);
+                if (valor.length() > max) {
+                    mensaje("El campo " + columna + " no debe superar " + max + " caracteres");
+                    return false;
                 }
             }
 
-            sql.append(" FROM ");
-            sql.append(configActual.nombreTabla);
-            sql.append(" ORDER BY ");
-            sql.append(configActual.columnaPK);
+            if (configActual.columnasEnteras.contains(columna)) {
+                try {
+                    int numero = Integer.parseInt(valor);
 
-            PreparedStatement ps = con.prepareStatement(sql.toString());
-            ResultSet rs = ps.executeQuery();
-
-            while (rs.next()) {
-                ObservableList<String> fila = FXCollections.observableArrayList();
-
-                for (String columna : configActual.columnas) {
-                    fila.add(rs.getString(columna));
+                    if (esColumnaMes(columna) && (numero < 1 || numero > 12)) {
+                        mensaje("El campo " + columna + " debe estar entre 1 y 12");
+                        return false;
+                    }
+                    if (esColumnaDia(columna) && (numero < 1 || numero > 31)) {
+                        mensaje("El campo " + columna + " debe estar entre 1 y 31");
+                        return false;
+                    }
+                    if (esColumnaAnio(columna) && (numero < 1900 || numero > 2100)) {
+                        mensaje("El campo " + columna + " debe estar entre 1900 y 2100");
+                        return false;
+                    }
+                    if (columna.equals("PreCuo") && (numero < 1 || numero > 10)) {
+                        mensaje("El numero de cuotas debe estar entre 1 y 10");
+                        return false;
+                    }
+                    if (columna.equals("PreCuoDes") && numero < 0) {
+                        mensaje("Las cuotas descontadas no pueden ser negativas");
+                        return false;
+                    }
+                } catch (NumberFormatException e) {
+                    mensaje("El campo " + columna + " debe ser numerico entero");
+                    return false;
                 }
-
-                datos.add(fila);
             }
 
-            rs.close();
-            ps.close();
+            if (configActual.columnasDecimales.contains(columna)) {
+                try {
+                    BigDecimal decimal = new BigDecimal(valor);
+                    if (decimal.compareTo(BigDecimal.ZERO) < 0) {
+                        mensaje("El campo " + columna + " no puede ser negativo");
+                        return false;
+                    }
+                } catch (NumberFormatException e) {
+                    mensaje("El campo " + columna + " debe ser decimal");
+                    return false;
+                }
+            }
+        }
+
+        return validarForeignKeys();
+    }
+
+    private boolean validarForeignKeys() {
+        try {
+            for (ForeignKeySimple fk : configActual.foreignKeysSimples) {
+                String valor = campos.get(fk.columnaLocal).getText().trim();
+                if (valor.equals("")) continue;   // campo opcional vacío → skip
+
+                if (!existeValor(fk.tablaReferencia, fk.columnaReferencia, valor)) {
+                    mensaje("No existe " + fk.columnaLocal + " = " + valor
+                            + " en " + fk.tablaReferencia);
+                    return false;
+                }
+            }
+
+            for (ForeignKeyCompuesta fk : configActual.foreignKeysCompuestas) {
+                if (!existeValorCompuesto(fk)) {
+                    mensaje("No existe la relacion compuesta en " + fk.tablaReferencia);
+                    return false;
+                }
+            }
+
+            return true;
 
         } catch (SQLException e) {
-            mensaje("Error al cargar tabla: " + e.getMessage());
-        }
-    }
-
-    private void cargarRegistroSeleccionado(ObservableList<String> fila) {
-        for (int i = 0; i < configActual.columnas.length; i++) {
-            String columna = configActual.columnas[i];
-
-            if (i < fila.size()) {
-                campos.get(columna).setText(fila.get(i));
-            }
-        }
-    }
-
-private boolean validarDatos() {
-    for (String columna : configActual.columnas) {
-        TextField txt   = campos.get(columna);
-        String    valor = txt.getText().trim();
-
-        if (configActual.columnaEstado != null
-                && columna.equals(configActual.columnaEstado)
-                && valor.equals("")) {
-            txt.setText("A");
-            valor = "A";
-        }
-
-        if (!configActual.columnasOpcionales.contains(columna) && valor.equals("")) {
-            mensaje("El campo " + columna + " es obligatorio");
+            mensaje("Error al validar claves foraneas: " + e.getMessage());
             return false;
         }
-
-        if (configActual.columnasOpcionales.contains(columna) && valor.equals("")) {
-            continue;
-        }
-
-        if (configActual.longitudes.containsKey(columna)) {
-            int max = configActual.longitudes.get(columna);
-            if (valor.length() > max) {
-                mensaje("El campo " + columna + " no debe superar " + max + " caracteres");
-                return false;
-            }
-        }
-
-        if (configActual.columnasEnteras.contains(columna)) {
-            try {
-                int numero = Integer.parseInt(valor);
-
-                if (esColumnaMes(columna) && (numero < 1 || numero > 12)) {
-                    mensaje("El campo " + columna + " debe estar entre 1 y 12");
-                    return false;
-                }
-                if (esColumnaDia(columna) && (numero < 1 || numero > 31)) {
-                    mensaje("El campo " + columna + " debe estar entre 1 y 31");
-                    return false;
-                }
-                if (esColumnaAnio(columna) && (numero < 1900 || numero > 2100)) {
-                    mensaje("El campo " + columna + " debe estar entre 1900 y 2100");
-                    return false;
-                }
-                if (columna.equals("PreCuo") && (numero < 1 || numero > 10)) {
-                    mensaje("El numero de cuotas debe estar entre 1 y 10");
-                    return false;
-                }
-                if (columna.equals("PreCuoDes") && numero < 0) {
-                    mensaje("Las cuotas descontadas no pueden ser negativas");
-                    return false;
-                }
-            } catch (NumberFormatException e) {
-                mensaje("El campo " + columna + " debe ser numerico entero");
-                return false;
-            }
-        }
-
-        if (configActual.columnasDecimales.contains(columna)) {
-            try {
-                BigDecimal decimal = new BigDecimal(valor);
-                if (decimal.compareTo(BigDecimal.ZERO) < 0) {
-                    mensaje("El campo " + columna + " no puede ser negativo");
-                    return false;
-                }
-            } catch (NumberFormatException e) {
-                mensaje("El campo " + columna + " debe ser decimal");
-                return false;
-            }
-        }
     }
 
-    return validarForeignKeys();
-}
+    private boolean existeValor(String tablaRef, String columnaRef, String valor)
+            throws SQLException {
+        String sql = "SELECT 1 FROM " + q(tablaRef) +
+                    " WHERE " + q(columnaRef) + " = ? LIMIT 1";
+        PreparedStatement ps = con.prepareStatement(sql);
+        ps.setString(1, valor);
+        ResultSet rs = ps.executeQuery();
+        boolean existe = rs.next();
+        rs.close(); ps.close();
+        return existe;
+    }
 
-private boolean validarForeignKeys() {
-    try {
-        for (ForeignKeySimple fk : configActual.foreignKeysSimples) {
-            String valor = campos.get(fk.columnaLocal).getText().trim();
-            if (valor.equals("")) continue;   // campo opcional vacío → skip
+    private boolean existeValorCompuesto(ForeignKeyCompuesta fk) throws SQLException {
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT 1 FROM ").append(q(fk.tablaReferencia)).append(" WHERE ");
 
-            if (!existeValor(fk.tablaReferencia, fk.columnaReferencia, valor)) {
-                mensaje("No existe " + fk.columnaLocal + " = " + valor
-                        + " en " + fk.tablaReferencia);
-                return false;
-            }
+        for (int i = 0; i < fk.columnasReferencia.length; i++) {
+            sql.append(q(fk.columnasReferencia[i])).append(" = ?");
+            if (i < fk.columnasReferencia.length - 1) sql.append(" AND ");
+        }
+        sql.append(" LIMIT 1");
+
+        PreparedStatement ps = con.prepareStatement(sql.toString());
+        for (int i = 0; i < fk.columnasLocales.length; i++) {
+            ps.setString(i + 1, campos.get(fk.columnasLocales[i]).getText().trim());
         }
 
-        for (ForeignKeyCompuesta fk : configActual.foreignKeysCompuestas) {
-            if (!existeValorCompuesto(fk)) {
-                mensaje("No existe la relacion compuesta en " + fk.tablaReferencia);
-                return false;
-            }
-        }
-
-        return true;
-
-    } catch (SQLException e) {
-        mensaje("Error al validar claves foraneas: " + e.getMessage());
-        return false;
-    }
-}
-
-private boolean existeValor(String tablaRef, String columnaRef, String valor)
-        throws SQLException {
-    String sql = "SELECT 1 FROM " + q(tablaRef) +
-                 " WHERE " + q(columnaRef) + " = ? LIMIT 1";
-    PreparedStatement ps = con.prepareStatement(sql);
-    ps.setString(1, valor);
-    ResultSet rs = ps.executeQuery();
-    boolean existe = rs.next();
-    rs.close(); ps.close();
-    return existe;
-}
-
-private boolean existeValorCompuesto(ForeignKeyCompuesta fk) throws SQLException {
-    StringBuilder sql = new StringBuilder();
-    sql.append("SELECT 1 FROM ").append(q(fk.tablaReferencia)).append(" WHERE ");
-
-    for (int i = 0; i < fk.columnasReferencia.length; i++) {
-        sql.append(q(fk.columnasReferencia[i])).append(" = ?");
-        if (i < fk.columnasReferencia.length - 1) sql.append(" AND ");
-    }
-    sql.append(" LIMIT 1");
-
-    PreparedStatement ps = con.prepareStatement(sql.toString());
-    for (int i = 0; i < fk.columnasLocales.length; i++) {
-        ps.setString(i + 1, campos.get(fk.columnasLocales[i]).getText().trim());
+        ResultSet rs = ps.executeQuery();
+        boolean existe = rs.next();
+        rs.close(); ps.close();
+        return existe;
     }
 
-    ResultSet rs = ps.executeQuery();
-    boolean existe = rs.next();
-    rs.close(); ps.close();
-    return existe;
-}
+
 
     private void habilitarCampos(boolean clave, boolean datosEditables) {
         for (String columna : configActual.columnas) {
@@ -1045,6 +1047,85 @@ private boolean existeValorCompuesto(ForeignKeyCompuesta fk) throws SQLException
                 txt.setEditable(datosEditables);
             }
         }
+    }
+
+    private boolean esPK(String columna) {
+    for (String pk : configActual.columnasPK) {
+        if (pk.equals(columna)) return true;
+    }
+    return false;
+}
+
+    private String condicionPK() {
+        StringBuilder sql = new StringBuilder();
+        for (int i = 0; i < configActual.columnasPK.length; i++) {
+            sql.append(q(configActual.columnasPK[i])).append(" = ?");
+            if (i < configActual.columnasPK.length - 1) sql.append(" AND ");
+        }
+        return sql.toString();
+    }
+
+    private boolean existeRegistroPK() throws SQLException {
+        String sql = "SELECT 1 FROM " + q(configActual.nombreTabla) +
+                    " WHERE " + condicionPK() + " LIMIT 1";
+        PreparedStatement ps = con.prepareStatement(sql);
+        int indice = 1;
+        for (String pk : configActual.columnasPK) {
+            ps.setString(indice++, campos.get(pk).getText().trim());
+        }
+        ResultSet rs = ps.executeQuery();
+        boolean existe = rs.next();
+        rs.close(); ps.close();
+        return existe;
+    }
+
+    private void eliminarFisico() {
+        try {
+            String sql = "DELETE FROM " + q(configActual.nombreTabla) +
+                        " WHERE " + condicionPK();
+            PreparedStatement ps = con.prepareStatement(sql);
+            int indice = 1;
+            for (String pk : configActual.columnasPK) {
+                ps.setString(indice++, campos.get(pk).getText().trim());
+            }
+            int filas = ps.executeUpdate();
+            ps.close();
+            mensaje("Registro eliminado fisicamente. Filas afectadas: " + filas);
+        } catch (SQLException e) {
+            mensaje("Error al eliminar: " + e.getMessage());
+        }
+    }
+
+
+    private void eliminar() {
+        ObservableList<String> fila = tabla.getSelectionModel().getSelectedItem();
+        if (fila == null) { mensaje("Seleccione un registro para eliminar"); return; }
+
+        cargarRegistroSeleccionado(fila);
+
+        if (configActual.columnaEstado != null) {
+            campos.get(configActual.columnaEstado).setText("*");
+            habilitarCampos(false, false);
+            flaAct = 1;
+            operacion = "ELIMINAR";
+            mensaje("Registro preparado para eliminacion logica. Presione Actualizar");
+        } else {
+            Optional<ButtonType> respuesta = confirmar(
+                "Esta tabla no tiene estado. Se eliminara fisicamente. Desea continuar?");
+            if (respuesta.isPresent() && respuesta.get() == ButtonType.OK) {
+                eliminarFisico();
+                cargarTabla();
+                limpiarCampos();
+            }
+        }
+    }
+
+    private Optional<ButtonType> confirmar(String texto) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Confirmacion");
+        alert.setHeaderText(null);
+        alert.setContentText(texto);
+        return alert.showAndWait();
     }
 
     private void limpiarCampos() {
