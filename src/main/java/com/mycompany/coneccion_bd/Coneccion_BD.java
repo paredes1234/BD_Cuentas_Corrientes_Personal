@@ -1120,6 +1120,90 @@ configuraciones.put(
         }
     }
 
+    private void crearCampos() {
+    panelCampos.getChildren().clear();
+    campos = new LinkedHashMap<>();
+
+    for (int i = 0; i < configActual.columnas.length; i++) {
+        String columna = configActual.columnas[i];
+
+        Label lbl = new Label(columna + ":");
+        lbl.setStyle("-fx-font-weight: bold;");
+
+        TextField txt = new TextField();
+        txt.setPrefWidth(245);
+
+        if (columna.equals(configActual.columnaEstado)) {
+            txt.setEditable(false);
+        }
+
+        campos.put(columna, txt);
+
+        int fila        = i / 2;
+        int columnaGrid = (i % 2) * 2;    // 0 o 2
+
+        panelCampos.add(lbl, columnaGrid,     fila);
+        panelCampos.add(txt, columnaGrid + 1, fila);
+    }
+}
+
+
+private String q(String texto) {
+    return "`" + texto + "`";
+}
+
+
+
+private void asignarParametro(PreparedStatement ps, int indice, String columna)
+        throws SQLException {
+    String valor = campos.get(columna).getText().trim();
+
+    if (configActual.columnaEstado != null
+            && columna.equals(configActual.columnaEstado)
+            && valor.equals("")) {
+        valor = "A";
+    }
+
+    if (configActual.columnasOpcionales.contains(columna) && valor.equals("")) {
+        ps.setNull(indice, Types.NULL);
+    } else {
+        ps.setString(indice, valor);
+    }
+}
+
+
+
+while (rs.next()) {
+    ObservableList<String> fila = FXCollections.observableArrayList();
+    for (String columna : configActual.columnas) {
+        String valor = rs.getString(columna);
+        if (valor == null) valor = "";
+        fila.add(valor);
+    }
+    datos.add(fila);
+}
+
+
+tabla.setOnMouseClicked(e -> {
+    ObservableList<String> fila = tabla.getSelectionModel().getSelectedItem();
+    if (fila != null) {
+        cargarRegistroSeleccionado(fila);
+        habilitarCampos(false, false);
+    }
+});
+
+private void cambiarModulo(String nombreTabla) {
+    configActual = configuraciones.get(nombreTabla);
+
+    lblTitulo.setText(configActual.titulo);
+    lblDescripcion.setText(configActual.descripcion + " - " + configActual.nombreTabla);
+
+    crearCampos();
+    crearColumnas();
+    cargarTabla();
+    cancelar();
+    }
+
     private Optional<ButtonType> confirmar(String texto) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Confirmacion");
