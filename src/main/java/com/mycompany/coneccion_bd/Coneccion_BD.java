@@ -751,7 +751,7 @@ configuraciones.put(
 
     private boolean modificarRegistro() {
         try {
-            if (!validarCamposObligatorios()) {
+            if (!validarDatos()) {
                 mensaje("Complete todos los campos obligatorios");
                 return false;
             }
@@ -884,17 +884,81 @@ configuraciones.put(
         }
     }
 
-    private boolean validarCamposObligatorios() {
-        for (String columna : configActual.columnas) {
-            TextField txt = campos.get(columna);
+private boolean validarDatos() {
+    for (String columna : configActual.columnas) {
+        TextField txt   = campos.get(columna);
+        String    valor = txt.getText().trim();
 
-            if (txt.getText().trim().equals("")) {
+        if (configActual.columnaEstado != null
+                && columna.equals(configActual.columnaEstado)
+                && valor.equals("")) {
+            txt.setText("A");
+            valor = "A";
+        }
+
+        if (!configActual.columnasOpcionales.contains(columna) && valor.equals("")) {
+            mensaje("El campo " + columna + " es obligatorio");
+            return false;
+        }
+
+        if (configActual.columnasOpcionales.contains(columna) && valor.equals("")) {
+            continue;
+        }
+
+        if (configActual.longitudes.containsKey(columna)) {
+            int max = configActual.longitudes.get(columna);
+            if (valor.length() > max) {
+                mensaje("El campo " + columna + " no debe superar " + max + " caracteres");
                 return false;
             }
         }
 
-        return true;
+        if (configActual.columnasEnteras.contains(columna)) {
+            try {
+                int numero = Integer.parseInt(valor);
+
+                if (esColumnaMes(columna) && (numero < 1 || numero > 12)) {
+                    mensaje("El campo " + columna + " debe estar entre 1 y 12");
+                    return false;
+                }
+                if (esColumnaDia(columna) && (numero < 1 || numero > 31)) {
+                    mensaje("El campo " + columna + " debe estar entre 1 y 31");
+                    return false;
+                }
+                if (esColumnaAnio(columna) && (numero < 1900 || numero > 2100)) {
+                    mensaje("El campo " + columna + " debe estar entre 1900 y 2100");
+                    return false;
+                }
+                if (columna.equals("PreCuo") && (numero < 1 || numero > 10)) {
+                    mensaje("El numero de cuotas debe estar entre 1 y 10");
+                    return false;
+                }
+                if (columna.equals("PreCuoDes") && numero < 0) {
+                    mensaje("Las cuotas descontadas no pueden ser negativas");
+                    return false;
+                }
+            } catch (NumberFormatException e) {
+                mensaje("El campo " + columna + " debe ser numerico entero");
+                return false;
+            }
+        }
+
+        if (configActual.columnasDecimales.contains(columna)) {
+            try {
+                BigDecimal decimal = new BigDecimal(valor);
+                if (decimal.compareTo(BigDecimal.ZERO) < 0) {
+                    mensaje("El campo " + columna + " no puede ser negativo");
+                    return false;
+                }
+            } catch (NumberFormatException e) {
+                mensaje("El campo " + columna + " debe ser decimal");
+                return false;
+            }
+        }
     }
+
+    return validarForeignKeys();
+}
 
     private void habilitarCampos(boolean clave, boolean datosEditables) {
         for (String columna : configActual.columnas) {
